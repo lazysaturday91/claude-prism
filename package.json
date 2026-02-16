@@ -1,0 +1,33 @@
+{
+  "name": "claude-prism",
+  "version": "0.1.0",
+  "description": "AI coding problem decomposition tool — Understand, Decompose, Execute, Checkpoint.",
+  "type": "module",
+  "bin": {
+    "prism": "./bin/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "keywords": [
+    "ai",
+    "claude",
+    "claude-code",
+    "tdd",
+    "decomposition",
+    "methodology"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "hooks/",
+    "templates/",
+    "README.md",
+    "README.ko.md"
+  ],
+  "author": "lazysaturday91",
+  "license": "MIT"
+}
