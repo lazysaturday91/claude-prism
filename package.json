@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "AI coding problem decomposition tool — Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {

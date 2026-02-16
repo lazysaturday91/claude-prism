@@ -11,7 +11,7 @@
  *        prism update
  */
 
-import { init, check, uninstall, update, doctor, stats, reset } from '../lib/installer.mjs';
+import { init, check, uninstall, update, doctor, stats, reset, initGlobal, uninstallGlobal } from '../lib/installer.mjs';
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -37,6 +37,15 @@ const cwd = process.cwd();
 
 switch (command) {
   case 'init': {
+    if (hasFlag('global')) {
+      console.log('🌈 claude-prism init --global\n');
+      initGlobal();
+      console.log('✅ Commands installed → ~/.claude/commands/claude-prism/');
+      console.log('✅ OMC skill installed → ~/.claude/skills/prism/');
+      console.log('\n🌈 Done. /claude-prism:prism available in all projects.');
+      break;
+    }
+
     const language = getFlag('lang') || 'en';
     const hooks = !hasFlag('no-hooks');
 
@@ -117,6 +126,15 @@ switch (command) {
   }
 
   case 'uninstall': {
+    if (hasFlag('global')) {
+      console.log('🌈 claude-prism uninstall --global\n');
+      uninstallGlobal();
+      console.log('✅ Global commands removed');
+      console.log('✅ OMC skill removed');
+      console.log('\n🌈 Global prism uninstalled.');
+      break;
+    }
+
     console.log('🌈 claude-prism uninstall\n');
     uninstall(cwd);
     console.log('✅ Rules removed from CLAUDE.md');
@@ -128,6 +146,15 @@ switch (command) {
   }
 
   case 'update': {
+    if (hasFlag('global')) {
+      console.log('🌈 claude-prism update --global\n');
+      initGlobal();
+      console.log('✅ Global commands updated');
+      console.log('✅ OMC skill updated');
+      console.log('\n🌈 Global prism updated to latest.');
+      break;
+    }
+
     console.log('🌈 claude-prism update\n');
     await update(cwd);
     console.log('✅ Rules updated');
@@ -142,16 +169,20 @@ switch (command) {
 
 Usage:
   prism init [--lang=XX] [--no-hooks]   Install prism in current project
+  prism init --global                    Install globally (~/.claude/) + OMC skill
   prism check [--ci]                     Verify installation
   prism doctor                           Diagnose issues with fix suggestions
   prism stats                            Show installation summary
   prism reset                            Clear hook state (edit counters, etc.)
   prism update                           Re-install using current config
-  prism uninstall                        Remove prism
+  prism update --global                  Update global commands + OMC skill
+  prism uninstall                        Remove prism from current project
+  prism uninstall --global               Remove global commands + OMC skill
 
 Options:
   --lang=XX    Language: en (default), ko, ja, zh
   --no-hooks   Skip enforcement hooks
+  --global     Install/uninstall globally (all projects)
   --ci         Output JSON for CI integration
   --version    Show version`);
   }

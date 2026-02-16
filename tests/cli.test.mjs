@@ -31,11 +31,11 @@ describe('cli init', () => {
     assert.ok(existsSync(join(projectDir, '.claude', 'commands', 'claude-prism', 'checkpoint.md')));
   });
 
-  it('creates all 6 namespaced command files after init', async () => {
+  it('creates all 7 namespaced command files after init', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { language: 'en', hooks: true });
     const nsDir = join(projectDir, '.claude', 'commands', 'claude-prism');
-    const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md'];
+    const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md', 'update.md'];
     for (const cmd of expected) {
       assert.ok(existsSync(join(nsDir, cmd)), `Expected ${cmd} to exist`);
     }
@@ -508,13 +508,13 @@ describe('cli doctor', () => {
     assert.ok(result.fixes.some(f => f.includes('migrate')));
   });
 
-  it('reports all 6 missing commands when namespace dir absent', async () => {
+  it('reports all 7 missing commands when namespace dir absent', async () => {
     const { doctor } = await import('../lib/installer.mjs');
     rmSync(join(projectDir, '.claude', 'commands', 'claude-prism'), { recursive: true });
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
     const missingCmds = result.issues.filter(i => i.includes('Missing command:'));
-    assert.equal(missingCmds.length, 6);
+    assert.equal(missingCmds.length, 7);
   });
 
   it('detects legacy .prism.json and suggests migration', async () => {

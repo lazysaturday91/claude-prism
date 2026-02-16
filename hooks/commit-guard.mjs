@@ -19,7 +19,7 @@ export const commitGuard = {
     if (testResult !== null && testResult.trim() === 'fail') {
       return {
         type: 'block',
-        message: '[prism] Commit blocked: last test run FAILED. Fix tests before committing.'
+        message: '🌈 Prism ✋ Commit blocked: last test run FAILED. Fix tests before committing.'
       };
     }
 
@@ -28,7 +28,7 @@ export const commitGuard = {
     if (lastTestRaw === null) {
       return {
         type: 'warn',
-        message: '[prism] No test run detected this session. Run tests before committing.'
+        message: '🌈 Prism > No test run detected this session. Run tests before committing.'
       };
     }
 
@@ -39,7 +39,7 @@ export const commitGuard = {
     if (diff > (config.maxTestAge || 300)) {
       return {
         type: 'warn',
-        message: `[prism] Last test run was ${Math.floor(diff / 60)}min ago. Run tests before committing.`
+        message: `🌈 Prism > Last test run was ${Math.floor(diff / 60)}min ago. Run tests before committing.`
       };
     }
 

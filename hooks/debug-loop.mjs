@@ -42,14 +42,14 @@ export const debugLoop = {
         : '';
       return {
         type: 'warn',
-        message: `[prism] Debug Loop: ${name} edited ${count} times.${hint} Stop and investigate root cause.`
+        message: `🌈 Prism > Debug Loop: ${name} edited ${count} times.${hint} Stop and investigate root cause.`
       };
     }
 
     if (count >= config.blockAt) {
       return {
         type: 'block',
-        message: `[prism] Debug Loop blocked: ${name} edited ${count} times. Discuss approach with user before continuing.`
+        message: `🌈 Prism ✋ Debug Loop blocked: ${name} edited ${count} times. Discuss approach with user before continuing.`
       };
     }
 

@@ -7,6 +7,7 @@ import { readJsonState, writeJsonState } from '../lib/state.mjs';
 
 const SOURCE_PATTERN = /\.(ts|tsx|js|jsx|py|go|rs|java|c|cpp|h|svelte|vue)$/;
 const TEST_PATTERN = /\.(test|spec|_test)\./;
+const PLAN_PATTERN = /(?:^|\/)docs\/plans\/.*\.md$|(?:^|\/).*plan.*\.md$/i;
 
 export const scopeGuard = {
   name: 'scope-guard',
@@ -14,6 +15,12 @@ export const scopeGuard = {
   evaluate(ctx, config, stateDir) {
     const filePath = ctx.filePath;
     if (!filePath) return { type: 'pass' };
+
+    // Plan file created → reset scope (user is decomposing properly)
+    if (PLAN_PATTERN.test(filePath)) {
+      writeJsonState(stateDir, 'scope-files', []);
+      return { type: 'pass', message: '🌈 Prism 📋 Plan file detected. Scope counter reset.' };
+    }
 
     // Only track source files
     if (!SOURCE_PATTERN.test(filePath)) return { type: 'pass' };
@@ -38,14 +45,14 @@ export const scopeGuard = {
     if (count >= blockAt) {
       return {
         type: 'block',
-        message: `[prism] Scope Guard: ${count} unique files modified without a plan. Run /prism to decompose before continuing.`
+        message: `🌈 Prism ✋ Scope Guard: ${count} unique files modified without a plan. Run /prism to decompose before continuing.`
       };
     }
 
     if (count >= warnAt) {
       return {
         type: 'warn',
-        message: `[prism] Scope Guard: ${count} unique files modified. Consider running /prism to decompose the task.`
+        message: `🌈 Prism > Scope Guard: ${count} unique files modified. Consider running /prism to decompose the task.`
       };
     }
 

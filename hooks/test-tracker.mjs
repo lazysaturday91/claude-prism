@@ -52,7 +52,7 @@ export const testTracker = {
     if (!passed) {
       return {
         type: 'warn',
-        message: '[prism] Tests FAILED. Fix before committing.'
+        message: '🌈 Prism 📊 Tests FAILED. Fix before committing.'
       };
     }
 
