@@ -11,13 +11,19 @@ AI 코딩 문제 분해 도구 — Understand, Decompose, Execute, Checkpoint (U
                                      스펙트럼
 ```
 
+[![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
+[![license](https://img.shields.io/npm/l/claude-prism)](https://github.com/lazysaturday91/claude-prism/blob/main/LICENSE)
+[![node](https://img.shields.io/node/v/claude-prism)](https://nodejs.org)
+
+> `ai-coding` · `problem-decomposition` · `claude-code-hooks` · `claude-code-plugin` · `udec` · `scope-guard`
+
 ## 무엇인가
 
 `claude-prism`은 UDEC 방법론 프레임워크를 Claude Code 프로젝트에 설치합니다.
 
 - **U**nderstand (이해) — 행동하기 전에 정보 충분성을 판별. 구조화된 질문 (한 번에 하나씩, 객관식, 최대 3라운드)
 - **D**ecompose (분해) — 복잡한 문제를 2-5분 크기의 검증 가능한 단위로 분해, TDD 기반
-- **E**xecute (실행) — 배치 실행 (배치당 3-4개 태스크), TDD Iron Law 준수
+- **E**xecute (실행) — 적응형 배치 실행, 파일 경로별 컨텍스트 인식 검증 (TDD / 빌드 / lint-only)
 - **C**heckpoint (확인) — 매 배치 후 보고, 다음 진행 전 사용자 확인
 
 ## 핵심 철학
@@ -37,6 +43,9 @@ npx claude-prism init --lang=ja    # 일본어
 npx claude-prism init --lang=zh    # 중국어
 npx claude-prism init --no-hooks   # 규칙만, hook 없이
 prism check                        # 설치 확인
+npx claude-prism init --global     # 글로벌 스킬로 설치 (모든 프로젝트에서 사용)
+npx claude-prism update            # 규칙과 커맨드를 최신으로 업데이트
+npx claude-prism update --global   # 글로벌 스킬도 업데이트
 ```
 
 ## 설치 후 구조
@@ -53,7 +62,8 @@ prism check                        # 설치 확인
 │   │       ├── plan.md          # /claude-prism:plan
 │   │       ├── doctor.md        # /claude-prism:doctor
 │   │       ├── stats.md         # /claude-prism:stats
-│   │       └── help.md          # /claude-prism:help
+│   │       ├── help.md          # /claude-prism:help
+│   │       └── update.md        # /claude-prism:update
 │   ├── hooks/                # (선택, --no-hooks 시 생략)
 │   │   ├── commit-guard.mjs
 │   │   ├── debug-loop.mjs
@@ -86,6 +96,7 @@ prism check                        # 설치 확인
 | `/claude-prism:doctor` | 설치 문제 | 건강 진단, 수정 제안 |
 | `/claude-prism:stats` | 현재 상태 | 버전, hooks, 언어, 플랜 진행률 |
 | `/claude-prism:help` | 커맨드 확인 | 커맨드 레퍼런스 |
+| `/claude-prism:update` | 업데이트 후 | 규칙과 커맨드를 최신 버전으로 업데이트 |
 
 ### 워크플로우
 
@@ -224,7 +235,7 @@ prism stats
 
 출력:
 ```
-  Version:   v0.1.0
+  Version:   v0.3.1
   Language:  ko
   Plans:     2 file(s)
   OMC:       ✅ v4.1.1
@@ -276,7 +287,7 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 
 ### debug-loop
 
-같은 파일을 연속으로 편집할 때 경고 (3회), 차단 (5회). 무한 디버깅 루프 감지.
+같은 파일의 편집 패턴을 분석합니다. **발산 편집** (같은 코드 영역 반복 — 삽질 가능성)과 **수렴 편집** (다른 영역: import, 로직, JSX — 정상적인 점진적 작업)을 구별합니다.
 
 ```json
 {
@@ -291,9 +302,10 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 ```
 
 **동작:**
-- 세션 내 같은 파일의 연속 편집 추적
-- 3회 편집: 경고 "문제를 이해하기 위해 한 발 물러나세요"
-- 5회 편집: 차단 후 재평가 강제
+- 스니펫 분석으로 편집 패턴 추적
+- **발산 패턴** (같은 영역): 3회에서 경고, 5회에서 차단
+- **수렴 패턴** (다른 영역): 조용히 통과, 차단도 경고로 다운그레이드
+- 무한 디버깅 루프를 감지하면서 정상적인 다영역 편집은 허용
 
 ### test-tracker
 
@@ -322,7 +334,7 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 
 **동작:**
 - 모든 Bash 커맨드에서 실행
-- 커맨드가 테스트 패턴과 일치하면 타임스탐프 기록
+- 커맨드가 테스트 패턴과 일치하면 타임스탬프 기록
 - 결과 기록 (종료 코드 기반 성공/실패)
 - `commit-guard`가 이 상태를 읽어 커밋 허용/차단
 
@@ -351,6 +363,9 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 - Agent 임계값 (OMC sub-agent 실행 중): 8개에서 경고, 12개에서 차단
 - 경고: "/claude-prism:prism을 실행하여 작업을 분해하는 것을 고려하세요"
 - 차단: "/claude-prism:prism을 실행하여 계속 진행하기 전에 분해하세요"
+- **플랜 인식**: 플랜 파일 생성 시 (`docs/plans/*.md`) 임계값이 자동으로 2배
+  - 표준 + 플랜: 8개에서 경고, 14개에서 차단
+  - Agent + 플랜: 16개에서 경고, 24개에서 차단
 
 ## 설정
 
@@ -396,7 +411,7 @@ prism doctor      # 진단 정보에 OMC 감지 표시
 ## 기술 사양
 
 - **패키지명**: `claude-prism`
-- **버전**: 0.1.0
+- **버전**: 0.3.1
 - **CLI 커맨드**: `prism`
 - **Node 버전**: >= 18
 - **의존성**: 0 (순수 ESM 모듈)
@@ -416,8 +431,8 @@ prism doctor      # 진단 정보에 OMC 감지 표시
 1. **정보 충분성 판별** — 요청이 명확한가? 질문이 필요한가?
 2. **최대 3라운드 질문** — 한 번에 하나씩, 객관식 우선
 3. **분해 5원칙** — 단위 크기, 테스트 선행, 독립 검증, 파일 명시, 의존성 명시
-4. **배치 + 체크포인트** — 3-4개 태스크씩 실행, 배치마다 보고
-5. **TDD Iron Law** — 실패 테스트 먼저, 테스트 없이 커밋 금지
+4. **적응형 배치 + 체크포인트** — 복잡도별 배치 크기 조절 (단순 5-8 / 일반 3-4 / 복잡 1-2), 배치마다 보고
+5. **컨텍스트 인식 검증** — 파일 경로별 검증 전략 (lib→TDD, components→빌드, config→lint)
 6. **자기 교정** — 같은 파일 3회 편집 시 멈추고 재검토
 
 ## 라이선스

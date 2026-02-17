@@ -1,11 +1,17 @@
 ```
-                         ╱╲
-            ━━━━━━━━━▶  ╱  ╲  ──── U  Understand
-            complex    ╱    ╲ ──── D  Decompose
-            problem   ╱ PRISM╲──── E  Execute
-                     ╱________╲─── C  Checkpoint
-                                     spectrum
+                        ╱╲
+           ━━━━━━━━━▶  ╱  ╲  ──── U  Understand
+           complex    ╱    ╲ ──── D  Decompose
+           problem   ╱ PRISM╲──── E  Execute
+                    ╱________╲─── C  Checkpoint
+                                    spectrum
 ```
+
+[![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
+[![license](https://img.shields.io/npm/l/claude-prism)](https://github.com/lazysaturday91/claude-prism/blob/main/LICENSE)
+[![node](https://img.shields.io/node/v/claude-prism)](https://nodejs.org)
+
+> `ai-coding` · `problem-decomposition` · `claude-code-hooks` · `claude-code-plugin` · `udec` · `scope-guard`
 
 # claude-prism
 
@@ -14,11 +20,6 @@ An AI coding problem decomposition tool for Claude Code. Installs the **UDEC** m
 **The biggest failure mode of AI coding isn't bad code — it's building the wrong thing.** AI agents skip understanding, skip decomposition, and run autonomously for 30 minutes only to produce something nobody wanted. Prism fixes this by injecting discipline into how Claude thinks.
 
 **Core philosophy:** Never implement what you haven't understood. Never execute what you haven't decomposed.
-
-- Zero dependencies
-- Node >= 18
-- MIT License
-- Repository: https://github.com/lazysaturday91/claude-prism
 
 ## The Problem
 
@@ -29,7 +30,7 @@ Without structure, Claude does this:
 | Reads request → assumes understanding | Reads request → assesses sufficiency |
 | Starts coding immediately | Asks 1-2 clarifying questions first |
 | Builds one 30-minute mega-feature | Decomposes into 2-5 minute verifiable units |
-| Runs autonomously (no checkpoints) | Batches execution: 3-4 tasks → checkpoint → ask permission |
+| Runs autonomously (no checkpoints) | Adaptive batches (1-8 tasks by complexity) → checkpoint → ask permission |
 | Produces working code that's wrong | Produces code that's correct *and* wanted |
 
 ## Installation
@@ -40,6 +41,9 @@ npx claude-prism init --lang=ko    # Korean
 npx claude-prism init --lang=ja    # Japanese
 npx claude-prism init --lang=zh    # Chinese
 npx claude-prism init --no-hooks   # Rules only, no hooks
+npx claude-prism init --global     # Install as global skill (available in all projects)
+npx claude-prism update            # Update rules and commands to latest
+npx claude-prism update --global   # Update global skill too
 prism check                        # Verify installation
 ```
 
@@ -50,7 +54,7 @@ After running `prism init`, your project gains:
 **UDEC Rules** — Injected into `CLAUDE.md` between `PRISM:START` and `PRISM:END` markers. Explains the four-phase methodology:
 - **U** — Assess information sufficiency before acting. Ask one question at a time, multiple choice, max 3 rounds.
 - **D** — Decompose complex problems into 2-5 minute units with TDD. Create a plan file for 6+ file changes.
-- **E** — Execute in batches (3-4 tasks per batch). Apply TDD Iron Law: failing test → implementation → verify → commit.
+- **E** — Execute in adaptive batches. Apply context-aware verification by file path (TDD / build / lint-only).
 - **C** — Checkpoint after each batch. Report progress, show next batch preview, get confirmation before continuing.
 
 **Slash Commands** — Added to `.claude/commands/claude-prism/`:
@@ -59,11 +63,12 @@ After running `prism init`, your project gains:
 - `/claude-prism:plan` — List, create, or view plan files
 - `/claude-prism:doctor` — Diagnose installation health via Claude
 - `/claude-prism:stats` — Show project statistics, hook status, and plan progress
+- `/claude-prism:update` — Update rules and commands to latest version
 - `/claude-prism:help` — Command reference
 
 **Hooks** (optional, unless `--no-hooks` is set) — Four CLI guards that enforce discipline:
 - `commit-guard` — Prevents commits when tests haven't run recently
-- `debug-loop` — Warns at 3 edits, blocks at 5 edits to same file (catches infinite debugging loops)
+- `debug-loop` — Detects divergent editing patterns on the same file (catches infinite debugging loops)
 - `test-tracker` — Detects test command execution (npm test, jest, vitest, pytest, etc.) and records pass/fail state
 - `scope-guard` — Warns at 4 unique files modified, blocks at 7 (agent-aware: warns at 8, blocks at 12)
 
@@ -83,6 +88,7 @@ your-project/
 │   │       ├── plan.md          # /claude-prism:plan
 │   │       ├── doctor.md        # /claude-prism:doctor
 │   │       ├── stats.md         # /claude-prism:stats
+│   │       ├── update.md        # /claude-prism:update
 │   │       └── help.md          # /claude-prism:help
 │   ├── hooks/               # (optional, if --no-hooks not set)
 │   │   ├── commit-guard.mjs
@@ -116,7 +122,7 @@ your-project/
     [ DECOMPOSE ]   ← Break into 2-5 min units, create plan file
           |
           v
-    [ EXECUTE ]     ← Run batch (3-4 tasks), TDD each unit
+    [ EXECUTE ]     ← Run adaptive batch, verify each unit
           |
           v
     [ CHECKPOINT ]  ← Report, show next batch, ask to continue
@@ -135,6 +141,7 @@ your-project/
 | `/claude-prism:checkpoint` | Mid-project | Check batch progress, preview next batch |
 | `/claude-prism:doctor` | Installation issues | Diagnose health, suggest fixes |
 | `/claude-prism:stats` | Check current state | Version, hooks, language, plan progress |
+| `/claude-prism:update` | After `npm update` | Update rules and commands to latest |
 | `/claude-prism:help` | Forgot commands | Quick reference |
 
 ### Workflow
@@ -237,7 +244,7 @@ Blocks commits if tests haven't been run in the last 5 minutes (configurable via
 
 ### debug-loop
 
-Warns when the same file is edited 3 times in a row, blocks at 5 edits. Catches infinite debugging cycles.
+Detects editing patterns on the same file. Distinguishes between **divergent** edits (same code area repeatedly — likely thrashing) and **convergent** edits (different areas like imports, logic, JSX — normal progressive work).
 
 ```json
 {
@@ -252,9 +259,10 @@ Warns when the same file is edited 3 times in a row, blocks at 5 edits. Catches 
 ```
 
 **Behavior:**
-- Tracks consecutive edits to same file within a session
-- Warns at 3 edits: "Consider stepping back to understand the problem"
-- Blocks at 5 edits: Forces reassessment before continuing
+- Tracks edit patterns using snippet analysis
+- **Divergent pattern** (same area): warns at 3 edits, blocks at 5
+- **Convergent pattern** (different areas): passes silently, downgrades block to warn
+- Catches infinite debugging loops while allowing normal multi-area edits
 
 ### test-tracker
 
@@ -312,6 +320,9 @@ Tracks unique source files modified per session. Warns when scope grows without 
 - Agent thresholds (when OMC sub-agents running): warns at 8, blocks at 12
 - Warning: "Consider running /claude-prism:prism to decompose the task"
 - Block: "Run /claude-prism:prism to decompose before continuing"
+- **Plan-aware**: When a plan file is created (`docs/plans/*.md`), thresholds are automatically doubled
+  - Standard with plan: warns at 8, blocks at 14
+  - Agent with plan: warns at 16, blocks at 24
 
 ## Configuration
 
@@ -401,7 +412,7 @@ prism stats
 
 Output:
 ```
-  Version:   v0.1.0
+  Version:   v0.3.1
   Language:  en
   Plans:     2 file(s)
   OMC:       ✅ v4.1.1
@@ -469,16 +480,21 @@ prism doctor      # Shows OMC detection in diagnostics
 
 This allows OMC agents (executor, architect, etc.) to modify more files per task without triggering scope warnings, recognizing that coordinated multi-agent work has different constraints than single-agent development.
 
-## TDD Iron Law
+## Verification Strategy
 
-Every task in the EXECUTE phase follows:
+Prism uses context-aware verification — the right level of rigor for each file type:
 
-1. Write a failing test
-2. Write minimum code to pass
-3. Verify the test passes
-4. Commit
+| Path Pattern | Strategy | Escalation |
+|---|---|---|
+| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD required** — failing test → implement → verify | Always TDD |
+| `components/`, `pages/`, `views/` | **Build verification** — build passes + visual check | Escalate to TDD if complex logic |
+| `config/`, `styles/`, `types/`, `*.json` | **Build/lint only** | Never |
 
-Never execute without this cycle.
+**Core rules (all paths):**
+1. Never claim completion without fresh verification evidence
+2. Never commit code that doesn't build
+3. TDD paths: write failing test → minimal code → verify
+4. Build paths: run build/lint → confirm no regressions
 
 ## Design Philosophy
 
@@ -487,7 +503,7 @@ Prism is built on the insight that **AI needs structure more than humans do.** H
 - Explicit understanding phase (no assumptions)
 - Enforced decomposition (no mega-tasks)
 - Batched execution with checkpoints (human in the loop)
-- TDD for every unit (verified, not assumed)
+- Context-aware verification (TDD, build, or lint — matched to file type)
 
 The prism metaphor: white light (complex problem) enters from one side and decomposes into a spectrum of colors (manageable units). Each color (unit) is individually verified, then recombined into a working whole.
 
