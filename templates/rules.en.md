@@ -124,17 +124,29 @@ Tech stack, key decisions, 2-3 sentences max.
 
 ### 3-1. Batch Execution + Checkpoints
 
-1. **Batch size**: 3-4 tasks per batch
+1. **Adaptive batch size**:
+   - Simple changes (imports, types, config): 5-8 per batch
+   - Standard changes (feature add/modify): 3-4 per batch
+   - Complex changes (new module, architecture): 1-2 per batch
 2. **Checkpoint**: report results after each batch + wait for user feedback
 3. **Report content**: what was done / verification results / next batch preview
 4. **On blockers**: stop immediately and report (do not guess)
 
-### 3-2. TDD Iron Law
+### 3-2. Verification Strategy (Context-Aware)
 
-1. Write a failing test first
-2. Write minimal code to pass the test
-3. Never commit without tests
-4. Never claim completion without fresh verification evidence
+Choose verification method by file location:
+
+| Path Pattern | Strategy | When to Escalate to TDD |
+|---|---|---|
+| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD required** — failing test → implement → verify | Always |
+| `components/`, `pages/`, `views/` | **Build verification** — build passes + visual check | When component has complex logic (state machines, calculations) |
+| `config/`, `styles/`, `types/`, `*.json` | **Build only** — build/lint passes | Never |
+
+**Core Rules (apply to all):**
+1. Never claim completion without fresh verification evidence
+2. Never commit code that doesn't build
+3. For TDD paths: write failing test first → minimal code to pass → verify
+4. For build paths: run build/lint after changes → confirm no regressions
 
 ### 3-3. Systematic Debugging
 
@@ -176,6 +188,17 @@ Before modifying any code, pass this filter:
 - Adding features beyond what was specified
 
 **If tempted:** Note the improvement for the user. Ask: "I noticed X could be improved. Want me to address it after the current task?"
+
+### 3-6. Agent Delegation Verification
+
+When delegating work to sub-agents (OMC executor, etc.):
+
+1. **Clear instructions**: specify expected output, files to modify, pass criteria
+2. **Read actual files** after agent completes — never trust the agent's report alone
+3. **Run build/test** to verify the agent's changes work
+4. **Fix or retry** if incomplete: complete remaining work directly, or re-delegate with clearer instructions
+
+**Never mark a delegated task as complete without reading the actual file state.**
 
 ---
 

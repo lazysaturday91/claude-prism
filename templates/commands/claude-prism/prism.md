@@ -47,8 +47,14 @@ When this command is invoked, follow the UDEC framework strictly:
 
 ## E — EXECUTE
 
-11. Execute one batch at a time (3-4 tasks per batch)
-12. Follow TDD: write failing test → implement → verify → commit
+11. Execute in adaptive batches:
+    - Simple changes (imports, types, config): 5-8 per batch
+    - Standard changes (feature add/modify): 3-4 per batch
+    - Complex changes (new module, architecture): 1-2 per batch
+12. Apply context-aware verification:
+    - `lib/`, `utils/`, `store/`, `hooks/`, `services/` → TDD (failing test → implement → verify)
+    - `components/`, `pages/`, `views/` → Build verification (escalate to TDD if complex logic)
+    - `config/`, `styles/`, `types/` → Build/lint only
 13. **Scope Guard**: Before each change, ask: "Was this requested?" If no → don't do it
 14. **Self-correction triggers**:
     - Same file edited 3+ times **on the same region/logic** → stop, investigate root cause (progressive edits across different regions — imports, logic, JSX — are normal)

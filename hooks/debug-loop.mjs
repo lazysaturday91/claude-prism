@@ -34,23 +34,31 @@ export const debugLoop = {
     writeJsonState(stateDir, logKey, editLog);
 
     const name = filePath.split('/').pop();
+    const pattern = count >= config.warnAt ? analyzePattern(editLog) : null;
 
-    if (count === config.warnAt) {
-      const pattern = analyzePattern(editLog);
-      const hint = pattern === 'divergent'
-        ? ' Pattern: DIVERGENT — same area edited repeatedly.'
-        : '';
+    if (count >= config.blockAt) {
+      // Divergent pattern → block; convergent (different areas) → downgrade to warn
+      if (pattern === 'divergent') {
+        return {
+          type: 'block',
+          message: `🌈 Prism ✋ Debug Loop blocked: ${name} edited ${count} times on same area. Discuss approach with user before continuing.`
+        };
+      }
       return {
         type: 'warn',
-        message: `🌈 Prism > Debug Loop: ${name} edited ${count} times.${hint} Stop and investigate root cause.`
+        message: `🌈 Prism > Debug Loop: ${name} edited ${count} times (different areas). Consider if this is expected.`
       };
     }
 
-    if (count >= config.blockAt) {
-      return {
-        type: 'block',
-        message: `🌈 Prism ✋ Debug Loop blocked: ${name} edited ${count} times. Discuss approach with user before continuing.`
-      };
+    if (count >= config.warnAt) {
+      // Only warn on divergent pattern (same area edited repeatedly)
+      if (pattern === 'divergent') {
+        return {
+          type: 'warn',
+          message: `🌈 Prism > Debug Loop: ${name} edited ${count} times on same area. Stop and investigate root cause.`
+        };
+      }
+      // Convergent edits (different areas) = normal progressive work → pass
     }
 
     return { type: 'pass' };

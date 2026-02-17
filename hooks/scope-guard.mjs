@@ -16,10 +16,10 @@ export const scopeGuard = {
     const filePath = ctx.filePath;
     if (!filePath) return { type: 'pass' };
 
-    // Plan file created → reset scope (user is decomposing properly)
+    // Plan file created → mark plan as active (thresholds will be doubled)
     if (PLAN_PATTERN.test(filePath)) {
-      writeJsonState(stateDir, 'scope-files', []);
-      return { type: 'pass', message: '🌈 Prism 📋 Plan file detected. Scope counter reset.' };
+      writeJsonState(stateDir, 'scope-has-plan', true);
+      return { type: 'pass', message: '🌈 Prism 📋 Plan file detected. Scope thresholds raised.' };
     }
 
     // Only track source files
@@ -39,8 +39,15 @@ export const scopeGuard = {
 
     // Agent-aware thresholds: sub-agents get higher limits
     const isAgent = ctx.agentId && ctx.agentId !== '' && ctx.agentId !== 'default';
-    const warnAt = isAgent ? (config.agentWarnAt || 8) : (config.warnAt || 4);
-    const blockAt = isAgent ? (config.agentBlockAt || 12) : (config.blockAt || 7);
+    let warnAt = isAgent ? (config.agentWarnAt || 8) : (config.warnAt || 4);
+    let blockAt = isAgent ? (config.agentBlockAt || 12) : (config.blockAt || 7);
+
+    // Active plan → double thresholds (planned work is expected to touch many files)
+    const hasPlan = readJsonState(stateDir, 'scope-has-plan');
+    if (hasPlan) {
+      warnAt *= 2;
+      blockAt *= 2;
+    }
 
     if (count >= blockAt) {
       return {
