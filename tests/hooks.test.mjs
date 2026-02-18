@@ -307,7 +307,7 @@ describe('scope-guard', () => {
 
   it('warns when warnAt unique files reached', async () => {
     const { scopeGuard } = await import('../hooks/scope-guard.mjs');
-    const config = { warnAt: 4, blockAt: 7 };
+    const config = { warnAt: 4, blockAt: 7, projectRoot: stateDir };
     scopeGuard.evaluate({ filePath: 'src/a.ts' }, config, stateDir);
     scopeGuard.evaluate({ filePath: 'src/b.ts' }, config, stateDir);
     scopeGuard.evaluate({ filePath: 'src/c.ts' }, config, stateDir);
@@ -318,7 +318,7 @@ describe('scope-guard', () => {
 
   it('blocks when blockAt unique files reached', async () => {
     const { scopeGuard } = await import('../hooks/scope-guard.mjs');
-    const config = { warnAt: 4, blockAt: 7 };
+    const config = { warnAt: 4, blockAt: 7, projectRoot: stateDir };
     for (let i = 0; i < 6; i++) {
       scopeGuard.evaluate({ filePath: `src/f${i}.ts` }, config, stateDir);
     }

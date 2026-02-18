@@ -156,7 +156,7 @@ describe('scope-guard agent awareness', () => {
 
   it('uses normal thresholds when no agentId', async () => {
     const { scopeGuard } = await import('../hooks/scope-guard.mjs');
-    const config = { warnAt: 4, blockAt: 7, agentWarnAt: 8, agentBlockAt: 12 };
+    const config = { warnAt: 4, blockAt: 7, agentWarnAt: 8, agentBlockAt: 12, projectRoot: stateDir };
 
     for (let i = 0; i < 6; i++) {
       scopeGuard.evaluate({ filePath: `src/f${i}.ts` }, config, stateDir);

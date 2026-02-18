@@ -21,6 +21,22 @@ An AI coding problem decomposition tool for Claude Code. Installs the **UDEC** m
 
 **Core philosophy:** Never implement what you haven't understood. Never execute what you haven't decomposed.
 
+### What's New in v0.4.0
+
+- **Task size tags** — Every task gets `[S]`, `[M]`, or `[L]` with adaptive batch composition (S+S+M = 1 batch, L = solo)
+- **Verification strategy per task** — `| Verify: TDD`, `| Verify: Build`, or `| Verify: Visual` in plan templates
+- **Pre-decomposition checklist** — Mandatory type/schema/dependency check before creating plans
+- **Progress dashboard** — Visual progress bar with phase/batch/task percentages at each checkpoint
+- **Adaptive checkpoints** — After 3 consecutive approvals, batch size expands to 5-8 for the rest of the phase
+- **Scope guard disk fallback** — Detects existing `docs/plans/*.md` on disk, not just in-session writes (fixes false "without a plan" warnings across sessions)
+- **20 test runner patterns** — Added bun, pnpm, yarn, deno, rspec, dotnet, mvn, gradle detection
+- **9 framework-specific result detectors** — Accurate pass/fail for node, jest, vitest, pytest, go, cargo, mocha, rspec, dotnet
+- **Unified hook pipeline** — Single process per hook event instead of separate processes per rule (reduced I/O)
+- **i18n message system** — All hook messages localized in en/ko/ja/zh
+- **Session event logging** — JSONL-based per-session event recording
+- **Alignment detection** — Scope drift tracking and major decision flagging
+- **Custom rules** — User-defined hook rules via config
+
 ## The Problem
 
 Without structure, Claude does this:
@@ -66,11 +82,13 @@ After running `prism init`, your project gains:
 - `/claude-prism:update` — Update rules and commands to latest version
 - `/claude-prism:help` — Command reference
 
-**Hooks** (optional, unless `--no-hooks` is set) — Four CLI guards that enforce discipline:
+**Hooks** (optional, unless `--no-hooks` is set) — Six CLI guards that enforce discipline:
 - `commit-guard` — Prevents commits when tests haven't run recently
 - `debug-loop` — Detects divergent editing patterns on the same file (catches infinite debugging loops)
-- `test-tracker` — Detects test command execution (npm test, jest, vitest, pytest, etc.) and records pass/fail state
-- `scope-guard` — Warns at 4 unique files modified, blocks at 7 (agent-aware: warns at 8, blocks at 12)
+- `test-tracker` — Detects test execution (20 patterns, 9 framework-specific result detectors) and records pass/fail
+- `scope-guard` — Warns at 4 unique files modified, blocks at 7 (agent-aware, plan-aware with disk fallback)
+- `alignment` — Detects scope drift (new directories outside base scope) and major decisions (package installs, db migrations, destructive deletes)
+- `turn-reporter` — Tracks turn count, warns at 5 autonomous turns without user input, provides previous turn summary
 
 **Configuration** — `.prism.json` stores language preference and hook settings. Includes OMC (oh-my-claudecode) detection.
 
@@ -91,19 +109,23 @@ your-project/
 │   │       ├── update.md        # /claude-prism:update
 │   │       └── help.md          # /claude-prism:help
 │   ├── hooks/               # (optional, if --no-hooks not set)
-│   │   ├── commit-guard.mjs
-│   │   ├── debug-loop.mjs
-│   │   ├── test-tracker.mjs
-│   │   └── scope-guard.mjs
+│   │   ├── pre-tool.mjs     # Unified PreToolUse runner
+│   │   ├── post-tool.mjs    # Unified PostToolUse runner
+│   │   └── user-prompt.mjs  # UserPromptSubmit runner
 │   ├── rules/               # Hook logic modules
 │   │   ├── commit-guard.mjs
 │   │   ├── debug-loop.mjs
 │   │   ├── test-tracker.mjs
-│   │   └── scope-guard.mjs
+│   │   ├── scope-guard.mjs
+│   │   ├── alignment.mjs
+│   │   └── turn-reporter.mjs
 │   ├── lib/                 # Hook dependencies
 │   │   ├── adapter.mjs
+│   │   ├── pipeline.mjs
 │   │   ├── state.mjs
+│   │   ├── session.mjs
 │   │   ├── config.mjs
+│   │   ├── messages.mjs
 │   │   └── utils.mjs
 │   └── settings.json        # Claude Code hook registration
 └── docs/plans/
@@ -268,15 +290,18 @@ Detects editing patterns on the same file. Distinguishes between **divergent** e
 
 Detects test command execution and records the timestamp and pass/fail state. Used by `commit-guard` to verify tests ran recently.
 
-**Detects:**
-- `npm test`, `npm run test`
-- `jest`, `vitest`
-- `node --test`
-- `npx mocha`, `mocha`
-- `pytest`
-- `cargo test`
-- `go test`
+**Detects (20 patterns):**
+- `npm test`, `pnpm test`, `yarn test`, `bun test`
+- `jest`, `vitest`, `mocha`, `rspec`
+- `node --test`, `deno test`
+- `npx jest`, `npx vitest`, `npx mocha`, `bunx vitest`
+- `pytest`, `cargo test`, `go test`
+- `dotnet test`, `mvn test`, `gradle test`
 - `make test`
+
+**Framework-specific result detection (9 detectors):**
+- Node test runner, Jest, Vitest, Pytest, Go, Cargo, Mocha, RSpec, dotnet
+- Analyzes both stdout and stderr for accurate pass/fail determination
 
 **Configuration:**
 ```json
@@ -323,6 +348,7 @@ Tracks unique source files modified per session. Warns when scope grows without 
 - **Plan-aware**: When a plan file is created (`docs/plans/*.md`), thresholds are automatically doubled
   - Standard with plan: warns at 8, blocks at 14
   - Agent with plan: warns at 16, blocks at 24
+- **Cross-session persistence**: Detects existing plan files on disk (`docs/plans/*.md`), not just plans created in the current session. Fixes false "without a plan" warnings when resuming work in a new session.
 
 ## Configuration
 
@@ -412,7 +438,7 @@ prism stats
 
 Output:
 ```
-  Version:   v0.3.1
+  Version:   v0.4.0
   Language:  en
   Plans:     2 file(s)
   OMC:       ✅ v4.1.1

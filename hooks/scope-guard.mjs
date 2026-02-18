@@ -6,6 +6,8 @@
 import { readJsonState, writeJsonState } from '../lib/state.mjs';
 import { DEFAULTS, buildSourcePattern, buildTestPattern } from '../lib/config.mjs';
 import { getMessage } from '../lib/messages.mjs';
+import { existsSync, readdirSync } from 'fs';
+import { join } from 'path';
 
 const PLAN_PATTERN = /(?:^|\/)docs\/plans\/.*\.md$|(?:^|\/).*plan.*\.md$/i;
 
@@ -47,7 +49,25 @@ export const scopeGuard = {
     let blockAt = isAgent ? (config.agentBlockAt || 12) : (config.blockAt || 7);
 
     // Active plan → double thresholds (planned work is expected to touch many files)
-    const hasPlan = readJsonState(stateDir, 'scope-has-plan');
+    let hasPlan = readJsonState(stateDir, 'scope-has-plan');
+
+    // Fallback: check disk for existing plan files (survives session restart)
+    if (!hasPlan) {
+      try {
+        const root = config.projectRoot || process.cwd();
+        const plansDir = join(root, 'docs', 'plans');
+        if (existsSync(plansDir)) {
+          const planFiles = readdirSync(plansDir).filter(f => f.endsWith('.md'));
+          if (planFiles.length > 0) {
+            hasPlan = true;
+            writeJsonState(stateDir, 'scope-has-plan', true);
+          }
+        }
+      } catch {
+        // Ignore filesystem errors — fail open
+      }
+    }
+
     if (hasPlan) {
       warnAt *= 2;
       blockAt *= 2;

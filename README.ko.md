@@ -32,6 +32,22 @@ AI 코딩 문제 분해 도구 — Understand, Decompose, Execute, Checkpoint (U
 
 AI 코딩의 가장 비싼 실패는 나쁜 코드가 아니라 — **틀린 것을 만드는 것**이다. AI 에이전트는 이해를 건너뛰고, 분해를 건너뛰고, 30분간 자율 실행한 뒤 사용자가 원하지 않은 것을 만들어냄. Prism은 CLAUDE.md에 방법론 규칙을 주입하여 Claude의 사고방식을 바꾼다.
 
+### v0.4.0 주요 변경
+
+- **태스크 크기 태그** — 모든 태스크에 `[S]`, `[M]`, `[L]` 부여, 적응형 배치 구성 (S+S+M = 1배치, L = 단독)
+- **태스크별 검증 전략** — 플랜 템플릿에 `| 검증: TDD`, `| 검증: Build`, `| 검증: Visual` 명시
+- **사전 분해 체크리스트** — 플랜 작성 전 타입/스키마/의존성 확인 필수화
+- **진행률 대시보드** — 각 체크포인트에 Phase/Batch/Task 퍼센트와 시각적 프로그레스 바
+- **적응형 체크포인트** — 3회 연속 승인 시 남은 Phase 동안 배치 크기 5-8로 확대
+- **Scope Guard 디스크 폴백** — 세션 간 `docs/plans/*.md` 존재를 디스크에서 직접 확인 (거짓 "without a plan" 경고 해결)
+- **20개 테스트 러너 패턴** — bun, pnpm, yarn, deno, rspec, dotnet, mvn, gradle 감지 추가
+- **9개 프레임워크별 결과 감지** — node, jest, vitest, pytest, go, cargo, mocha, rspec, dotnet 정확한 성공/실패 판별
+- **통합 hook 파이프라인** — hook 이벤트당 단일 프로세스 (I/O 감소)
+- **i18n 메시지 시스템** — 모든 hook 메시지 en/ko/ja/zh 지역화
+- **세션 이벤트 로깅** — JSONL 기반 세션별 이벤트 기록
+- **정렬 감지** — 범위 이탈 추적 및 주요 결정 플래깅
+- **커스텀 규칙** — 설정을 통한 사용자 정의 hook 규칙
+
 ## 설치
 
 프로젝트 루트에서:
@@ -65,19 +81,23 @@ npx claude-prism update --global   # 글로벌 스킬도 업데이트
 │   │       ├── help.md          # /claude-prism:help
 │   │       └── update.md        # /claude-prism:update
 │   ├── hooks/                # (선택, --no-hooks 시 생략)
-│   │   ├── commit-guard.mjs
-│   │   ├── debug-loop.mjs
-│   │   ├── test-tracker.mjs
-│   │   └── scope-guard.mjs
+│   │   ├── pre-tool.mjs      # 통합 PreToolUse 러너
+│   │   ├── post-tool.mjs     # 통합 PostToolUse 러너
+│   │   └── user-prompt.mjs   # UserPromptSubmit 러너
 │   ├── rules/                # hook 규칙 로직
 │   │   ├── commit-guard.mjs
 │   │   ├── debug-loop.mjs
 │   │   ├── test-tracker.mjs
-│   │   └── scope-guard.mjs
+│   │   ├── scope-guard.mjs
+│   │   ├── alignment.mjs
+│   │   └── turn-reporter.mjs
 │   ├── lib/                  # hook 의존 모듈
 │   │   ├── adapter.mjs
+│   │   ├── pipeline.mjs
 │   │   ├── state.mjs
+│   │   ├── session.mjs
 │   │   ├── config.mjs
+│   │   ├── messages.mjs
 │   │   └── utils.mjs
 │   └── settings.json         # Claude Code hook 등록
 └── docs/plans/               # /claude-prism:prism 실행 시 계획 파일 생성
@@ -235,7 +255,7 @@ prism stats
 
 출력:
 ```
-  Version:   v0.3.1
+  Version:   v0.4.0
   Language:  ko
   Plans:     2 file(s)
   OMC:       ✅ v4.1.1
@@ -311,15 +331,18 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 
 테스트 커맨드 실행을 감지하고 타임스탐프와 성공/실패 상태를 기록합니다. `commit-guard`가 최근 테스트 실행을 확인하는 데 사용합니다.
 
-**감지하는 테스트:**
-- `npm test`, `npm run test`
-- `jest`, `vitest`
-- `node --test`
-- `npx mocha`, `mocha`
-- `pytest`
-- `cargo test`
-- `go test`
+**감지하는 테스트 (20개 패턴):**
+- `npm test`, `pnpm test`, `yarn test`, `bun test`
+- `jest`, `vitest`, `mocha`, `rspec`
+- `node --test`, `deno test`
+- `npx jest`, `npx vitest`, `npx mocha`, `bunx vitest`
+- `pytest`, `cargo test`, `go test`
+- `dotnet test`, `mvn test`, `gradle test`
 - `make test`
+
+**프레임워크별 결과 감지 (9개):**
+- Node test runner, Jest, Vitest, Pytest, Go, Cargo, Mocha, RSpec, dotnet
+- stdout와 stderr를 모두 분석하여 정확한 성공/실패 판별
 
 **설정:**
 ```json
@@ -366,6 +389,7 @@ Hook은 선택 사항인 CLI 가드로, 개발 중 규율을 강제합니다. `p
 - **플랜 인식**: 플랜 파일 생성 시 (`docs/plans/*.md`) 임계값이 자동으로 2배
   - 표준 + 플랜: 8개에서 경고, 14개에서 차단
   - Agent + 플랜: 16개에서 경고, 24개에서 차단
+- **세션 간 지속성**: 현재 세션에서 생성된 플랜뿐만 아니라 디스크에 존재하는 기존 플랜 파일(`docs/plans/*.md`)도 감지. 새 세션에서 작업 재개 시 거짓 "without a plan" 경고 해결.
 
 ## 설정
 
@@ -411,7 +435,7 @@ prism doctor      # 진단 정보에 OMC 감지 표시
 ## 기술 사양
 
 - **패키지명**: `claude-prism`
-- **버전**: 0.3.1
+- **버전**: 0.4.0
 - **CLI 커맨드**: `prism`
 - **Node 버전**: >= 18
 - **의존성**: 0 (순수 ESM 모듈)
@@ -430,10 +454,11 @@ prism doctor      # 진단 정보에 OMC 감지 표시
 
 1. **정보 충분성 판별** — 요청이 명확한가? 질문이 필요한가?
 2. **최대 3라운드 질문** — 한 번에 하나씩, 객관식 우선
-3. **분해 5원칙** — 단위 크기, 테스트 선행, 독립 검증, 파일 명시, 의존성 명시
-4. **적응형 배치 + 체크포인트** — 복잡도별 배치 크기 조절 (단순 5-8 / 일반 3-4 / 복잡 1-2), 배치마다 보고
-5. **컨텍스트 인식 검증** — 파일 경로별 검증 전략 (lib→TDD, components→빌드, config→lint)
-6. **자기 교정** — 같은 파일 3회 편집 시 멈추고 재검토
+3. **분해 5원칙 + 사전 체크** — 단위 크기, 테스트 선행, 독립 검증, 파일 명시, 의존성 명시 + 타입/스키마/교차패키지 확인
+4. **크기 태그 + 적응형 배치** — [S/M/L] 태그 기반 배치 구성, 3회 연속 승인 시 배치 확대
+5. **태스크별 검증 전략** — TDD / Build / Visual 명시, 파일 경로별 자동 선택
+6. **진행률 대시보드** — Phase/Batch/Task % 시각화, 체크포인트마다 보고
+7. **자기 교정** — 같은 파일 3회 편집 시 멈추고 재검토
 
 ## 라이선스
 

@@ -22,13 +22,29 @@ When this command is invoked:
 
    ### Progress
 
+   ```
+   Phase: [current phase] | Batch: [N/M] | Tasks: [done/total] ([%])
+   [████████░░] 80% — Next: [next batch name]
+   ```
+
    - Batches complete: N/M
    - Current batch: [name] — [X/Y tasks done]
    - Remaining: [batch names]
    - Blockers: [any issues encountered]
 
+   ### Task Size Distribution
+
+   | Size | Count | Done |
+   |------|-------|------|
+   | [S] Small | N | N |
+   | [M] Medium | N | N |
+   | [L] Large | N | N |
+
 4. **Show summary**:
    - Files created/modified so far
    - Tests added and their status
    - Commits made
-5. **Ask**: "Continue with the current plan, adjust, or stop?"
+5. **Checkpoint policy check**:
+   - If 3+ consecutive approvals → suggest expanding batch size to 5-8
+   - If phase boundary → always stop
+6. **Ask**: "Continue with the current plan, adjust, or stop?"

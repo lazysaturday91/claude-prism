@@ -105,11 +105,16 @@ One sentence: what we're building and why.
 Tech stack, key decisions, 2-3 sentences max.
 
 ## Batch 1: [Name]
-- [ ] Task 1.1: [description] → `path/to/file`
+- [ ] Task 1.1: [S] [description] | Verify: Build → `path/to/file`
+  - Pass criterion: [specific assertion]
+- [ ] Task 1.2: [M] [description] | Verify: TDD → `path/to/file`
+  - Prerequisite: Task 1.1
   - Test: `path/to/test` — [what it verifies]
   - Pass criterion: [specific assertion]
-- [ ] Task 1.2: ...
-- [ ] Task 1.3: ...
+- [ ] Task 1.3: [L] [description] | Verify: TDD → `path/to/file`
+  - Prerequisite: Task 1.1, Task 1.2
+  - Test: `path/to/test` — [what it verifies]
+  - Pass criterion: [specific assertion]
 
 ## Batch 2: [Name]
 - [ ] Task 2.1: ...
@@ -117,6 +122,20 @@ Tech stack, key decisions, 2-3 sentences max.
 ## Risks / Open Questions
 - [Known unknowns or potential blockers]
 ```
+
+### 2-6. Task Sizing and Pre-Decomposition Check
+
+**Size Tags (assign to every task):**
+- **[S]** Small: <30 LOC, config/style/single-function changes
+- **[M]** Medium: 30-100 LOC, feature implementation, component creation
+- **[L]** Large: >100 LOC, multi-file rewrite, new module/architecture
+
+**Batch composition by size**: S+S+M = 1 batch, L = 1 batch alone, S+S+S+S = 1 batch
+
+**Pre-decomposition checklist (before creating plan):**
+- [ ] Required types/interfaces have the necessary fields?
+- [ ] External package APIs behave as expected?
+- [ ] Cross-package dependencies identified and noted as prerequisites?
 
 ---
 
@@ -211,6 +230,17 @@ After each batch:
 - Report verification results
 - Preview next batch
 - "Continue?"
+
+**Checkpoint frequency policy:**
+- **Phase boundary**: always stop (mandatory)
+- **Batch boundary**: stop by default → after 3 consecutive approvals, increase batch size to 5-8 for the remainder of the phase
+- **Blocker encountered**: always stop (mandatory)
+
+**Progress dashboard (include at each checkpoint):**
+```
+Phase: [current phase] | Batch: [N/M] | Tasks: [done/total] ([%])
+[████████░░] 80% — Next: [next batch name]
+```
 
 ### 4-2. Direction Change
 

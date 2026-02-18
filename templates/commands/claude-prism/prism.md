@@ -42,8 +42,15 @@ When this command is invoked, follow the UDEC framework strictly:
    - Independent verification: each unit has a pass criterion
    - Files specified: list files to create/modify per unit
    - Dependencies noted: mark if unit depends on a previous one
-9. **Save plan** to `docs/plans/YYYY-MM-DD-<topic>.md`
-10. **Get approval**: "Proceed with this plan?"
+9. **Assign size tags** to every task: [S] <30 LOC, [M] 30-100 LOC, [L] >100 LOC
+   - Batch composition: S+S+M = 1 batch, L = 1 batch alone
+10. **Assign verification strategy** per task: `| Verify: TDD` or `| Verify: Build` or `| Verify: Visual`
+11. **Pre-decomposition checklist**:
+    - Required types/interfaces have the necessary fields?
+    - External package APIs behave as expected?
+    - Cross-package dependencies identified and noted as prerequisites?
+12. **Save plan** to `docs/plans/YYYY-MM-DD-<topic>.md`
+13. **Get approval**: "Proceed with this plan?"
 
 ## E — EXECUTE
 
@@ -70,15 +77,21 @@ When this command is invoked, follow the UDEC framework strictly:
 
 ## C — CHECKPOINT
 
-17. After each batch, report using this format:
+20. After each batch, report using this format:
 
     | Item | Before | After |
     |------|--------|-------|
     | [what changed] | [old behavior] | [new behavior] |
 
-18. Include: verification results, files modified, tests status
-19. Ask: "Continue to next batch?"
-20. User can redirect, adjust scope, or stop at any checkpoint
+    ```
+    Phase: [current] | Batch: [N/M] | Tasks: [done/total] ([%])
+    [████████░░] 80% — Next: [next batch name]
+    ```
+
+21. Include: verification results, files modified, tests status
+22. **Checkpoint policy**: after 3 consecutive approvals, increase batch size to 5-8 for the rest of the phase
+23. Ask: "Continue to next batch?"
+24. User can redirect, adjust scope, or stop at any checkpoint
 
 ## OMC Integration
 
