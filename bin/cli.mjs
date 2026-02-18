@@ -35,6 +35,7 @@ if (hasFlag('version') || hasFlag('v')) {
 
 const cwd = process.cwd();
 
+try {
 switch (command) {
   case 'init': {
     if (hasFlag('global')) {
@@ -48,6 +49,19 @@ switch (command) {
 
     const language = getFlag('lang') || 'en';
     const hooks = !hasFlag('no-hooks');
+
+    if (hasFlag('dry-run')) {
+      const { dryRun } = await import('../lib/installer.mjs');
+      const result = dryRun(cwd, { language, hooks });
+      console.log('🌈 claude-prism init --dry-run\n');
+      console.log('  Files that would be created/updated:\n');
+      for (const action of result.actions) {
+        const icon = action.status === 'create' ? '🆕' : '🔄';
+        console.log(`  ${icon} [${action.status}] ${action.path}`);
+      }
+      console.log(`\n  Total: ${result.actions.length} files`);
+      break;
+    }
 
     console.log('🌈 claude-prism init\n');
     await init(cwd, { language, hooks });
@@ -182,8 +196,23 @@ Usage:
 Options:
   --lang=XX    Language: en (default), ko, ja, zh
   --no-hooks   Skip enforcement hooks
+  --dry-run    Show what init would do without making changes
   --global     Install/uninstall globally (all projects)
   --ci         Output JSON for CI integration
   --version    Show version`);
   }
+}
+} catch (err) {
+  const msg = err.message || String(err);
+  process.stderr.write(`🌈 Prism Error: ${msg}\n`);
+
+  if (/EACCES|permission/i.test(msg)) {
+    process.stderr.write('💡 Check directory permissions\n');
+  } else if (/JSON|parse/i.test(msg)) {
+    process.stderr.write('💡 Config file may be corrupted. Try `prism reset` or delete .claude-prism.json\n');
+  } else if (/ENOENT.*package\.json/i.test(msg)) {
+    process.stderr.write('💡 Not in a project directory?\n');
+  }
+
+  process.exit(1);
 }

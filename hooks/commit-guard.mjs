@@ -4,12 +4,14 @@
  */
 
 import { readState } from '../lib/state.mjs';
+import { getMessage } from '../lib/messages.mjs';
 
 export const commitGuard = {
   name: 'commit-guard',
 
   evaluate(ctx, config, stateDir) {
     const command = ctx.command || '';
+    const lang = config.language || 'en';
 
     if (!command.includes('git commit')) return { type: 'pass' };
     if (command.includes('--allow-empty')) return { type: 'pass' };
@@ -19,7 +21,7 @@ export const commitGuard = {
     if (testResult !== null && testResult.trim() === 'fail') {
       return {
         type: 'block',
-        message: '🌈 Prism ✋ Commit blocked: last test run FAILED. Fix tests before committing.'
+        message: getMessage(lang, 'commit-guard.block.failed')
       };
     }
 
@@ -28,7 +30,7 @@ export const commitGuard = {
     if (lastTestRaw === null) {
       return {
         type: 'warn',
-        message: '🌈 Prism > No test run detected this session. Run tests before committing.'
+        message: getMessage(lang, 'commit-guard.warn.no-test')
       };
     }
 
@@ -39,7 +41,7 @@ export const commitGuard = {
     if (diff > (config.maxTestAge || 300)) {
       return {
         type: 'warn',
-        message: `🌈 Prism > Last test run was ${Math.floor(diff / 60)}min ago. Run tests before committing.`
+        message: getMessage(lang, 'commit-guard.warn.stale', { minutes: Math.floor(diff / 60) })
       };
     }
 

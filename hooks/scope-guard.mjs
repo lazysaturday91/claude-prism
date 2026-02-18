@@ -4,9 +4,9 @@
  */
 
 import { readJsonState, writeJsonState } from '../lib/state.mjs';
+import { DEFAULTS, buildSourcePattern, buildTestPattern } from '../lib/config.mjs';
+import { getMessage } from '../lib/messages.mjs';
 
-const SOURCE_PATTERN = /\.(ts|tsx|js|jsx|py|go|rs|java|c|cpp|h|svelte|vue)$/;
-const TEST_PATTERN = /\.(test|spec|_test)\./;
 const PLAN_PATTERN = /(?:^|\/)docs\/plans\/.*\.md$|(?:^|\/).*plan.*\.md$/i;
 
 export const scopeGuard = {
@@ -17,16 +17,20 @@ export const scopeGuard = {
     if (!filePath) return { type: 'pass' };
 
     // Plan file created → mark plan as active (thresholds will be doubled)
+    const lang = config.language || 'en';
     if (PLAN_PATTERN.test(filePath)) {
       writeJsonState(stateDir, 'scope-has-plan', true);
-      return { type: 'pass', message: '🌈 Prism 📋 Plan file detected. Scope thresholds raised.' };
+      return { type: 'pass', message: getMessage(lang, 'scope-guard.plan-detected') };
     }
 
     // Only track source files
-    if (!SOURCE_PATTERN.test(filePath)) return { type: 'pass' };
+    const sourcePattern = buildSourcePattern(config.sourceExtensions || DEFAULTS.sourceExtensions);
+    const testPattern = buildTestPattern(config.testPatterns || DEFAULTS.testPatterns);
+
+    if (!sourcePattern.test(filePath)) return { type: 'pass' };
 
     // Don't count test files toward scope
-    if (TEST_PATTERN.test(filePath)) return { type: 'pass' };
+    if (testPattern.test(filePath)) return { type: 'pass' };
 
     // Track unique files
     let files = readJsonState(stateDir, 'scope-files') || [];
@@ -52,14 +56,14 @@ export const scopeGuard = {
     if (count >= blockAt) {
       return {
         type: 'block',
-        message: `🌈 Prism ✋ Scope Guard: ${count} unique files modified without a plan. Run /prism to decompose before continuing.`
+        message: getMessage(lang, 'scope-guard.block', { count })
       };
     }
 
     if (count >= warnAt) {
       return {
         type: 'warn',
-        message: `🌈 Prism > Scope Guard: ${count} unique files modified. Consider running /prism to decompose the task.`
+        message: getMessage(lang, 'scope-guard.warn', { count })
       };
     }
 

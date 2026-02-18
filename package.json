@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "AI coding problem decomposition tool — Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {
@@ -36,6 +36,14 @@
     "README.md",
     "README.ko.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lazysaturday91/claude-prism.git"
+  },
+  "homepage": "https://github.com/lazysaturday91/claude-prism#readme",
+  "bugs": {
+    "url": "https://github.com/lazysaturday91/claude-prism/issues"
+  },
   "author": "lazysaturday91",
   "license": "MIT"
 }

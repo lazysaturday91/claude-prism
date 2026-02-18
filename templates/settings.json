@@ -6,40 +6,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/commit-guard.mjs",
-            "timeout": 5
+            "command": "node .claude/hooks/pre-tool.mjs",
+            "timeout": 5000
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/debug-loop.mjs",
-            "timeout": 5
+            "command": "node .claude/hooks/post-tool.mjs",
+            "timeout": 5000
           }
         ]
-      },
+      }
+    ],
+    "UserPromptSubmit": [
       {
-        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/scope-guard.mjs",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/test-tracker.mjs",
-            "timeout": 5
+            "command": "node .claude/hooks/user-prompt.mjs",
+            "timeout": 5000
           }
         ]
       }

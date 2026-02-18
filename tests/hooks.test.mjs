@@ -152,16 +152,16 @@ describe('debug-loop', () => {
     const { debugLoop } = await import('../hooks/debug-loop.mjs');
     const config = { warnAt: 3, blockAt: 5 };
 
-    debugLoop.evaluate({ filePath: 'src/a.ts', oldString: '' }, config, stateDir);
-    debugLoop.evaluate({ filePath: 'src/a.ts', oldString: '' }, config, stateDir);
-    debugLoop.evaluate({ filePath: 'src/b.ts', oldString: '' }, config, stateDir);
+    debugLoop.evaluate({ filePath: 'src/a.ts', oldString: 'const foo = 1;' }, config, stateDir);
+    debugLoop.evaluate({ filePath: 'src/a.ts', oldString: 'const foo = 1;' }, config, stateDir);
+    debugLoop.evaluate({ filePath: 'src/b.ts', oldString: 'const bar = 2;' }, config, stateDir);
 
-    // a.ts at 3rd edit should warn
-    const resultA = debugLoop.evaluate({ filePath: 'src/a.ts', oldString: '' }, config, stateDir);
+    // a.ts at 3rd edit (same snippet = divergent) should warn
+    const resultA = debugLoop.evaluate({ filePath: 'src/a.ts', oldString: 'const foo = 1;' }, config, stateDir);
     assert.equal(resultA.type, 'warn');
 
     // b.ts at 2nd edit should pass
-    const resultB = debugLoop.evaluate({ filePath: 'src/b.ts', oldString: '' }, config, stateDir);
+    const resultB = debugLoop.evaluate({ filePath: 'src/b.ts', oldString: 'const bar = 2;' }, config, stateDir);
     assert.equal(resultB.type, 'pass');
   });
 
