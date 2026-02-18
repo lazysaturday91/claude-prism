@@ -32,7 +32,6 @@ An AI coding problem decomposition tool for Claude Code. Installs the **UDEC** m
 - **20 test runner patterns** — Added bun, pnpm, yarn, deno, rspec, dotnet, mvn, gradle detection
 - **9 framework-specific result detectors** — Accurate pass/fail for node, jest, vitest, pytest, go, cargo, mocha, rspec, dotnet
 - **Unified hook pipeline** — Single process per hook event instead of separate processes per rule (reduced I/O)
-- **i18n message system** — All hook messages localized in en/ko/ja/zh
 - **Session event logging** — JSONL-based per-session event recording
 - **Alignment detection** — Scope drift tracking and major decision flagging
 - **Custom rules** — User-defined hook rules via config
@@ -52,10 +51,7 @@ Without structure, Claude does this:
 ## Installation
 
 ```bash
-npx claude-prism init              # English, with hooks
-npx claude-prism init --lang=ko    # Korean
-npx claude-prism init --lang=ja    # Japanese
-npx claude-prism init --lang=zh    # Chinese
+npx claude-prism init              # Install with hooks
 npx claude-prism init --no-hooks   # Rules only, no hooks
 npx claude-prism init --global     # Install as global skill (available in all projects)
 npx claude-prism update            # Update rules and commands to latest
@@ -90,7 +86,7 @@ After running `prism init`, your project gains:
 - `alignment` — Detects scope drift (new directories outside base scope) and major decisions (package installs, db migrations, destructive deletes)
 - `turn-reporter` — Tracks turn count, warns at 5 autonomous turns without user input, provides previous turn summary
 
-**Configuration** — `.prism.json` stores language preference and hook settings. Includes OMC (oh-my-claudecode) detection.
+**Configuration** — `.claude-prism.json` stores hook settings. Includes OMC (oh-my-claudecode) detection.
 
 ## File Structure After Installation
 
@@ -162,7 +158,7 @@ your-project/
 | `/claude-prism:plan` | Manage plan files | List, create, or view plans |
 | `/claude-prism:checkpoint` | Mid-project | Check batch progress, preview next batch |
 | `/claude-prism:doctor` | Installation issues | Diagnose health, suggest fixes |
-| `/claude-prism:stats` | Check current state | Version, hooks, language, plan progress |
+| `/claude-prism:stats` | Check current state | Version, hooks, plan progress |
 | `/claude-prism:update` | After `npm update` | Update rules and commands to latest |
 | `/claude-prism:help` | Forgot commands | Quick reference |
 
@@ -221,7 +217,7 @@ User request arrives
 **Pattern 4: Quick Troubleshooting**
 ```
 /claude-prism:doctor → Check installation health
-/claude-prism:stats  → Verify hooks, language, OMC status
+/claude-prism:stats  → Verify hooks, OMC status
 ```
 
 ### Before & After
@@ -356,7 +352,6 @@ Edit `.claude-prism.json` to customize behavior:
 
 ```json
 {
-  "language": "en",
   "hooks": {
     "commit-guard": { "enabled": true, "maxTestAge": 300 },
     "debug-loop": { "enabled": true, "warnAt": 3, "blockAt": 5 },
@@ -367,7 +362,6 @@ Edit `.claude-prism.json` to customize behavior:
 ```
 
 **Settings:**
-- `language` — Rule language: `en` (English), `ko` (Korean), `ja` (Japanese), `zh` (Chinese)
 - `hooks.*` — Enable/disable individual hooks or customize thresholds
 - `hooks.commit-guard.maxTestAge` — Seconds before test is considered stale (default: 300)
 - `hooks.debug-loop.warnAt/blockAt` — Edit counts that trigger warnings/blocks
@@ -430,7 +424,7 @@ If issues are found:
 
 ### prism stats
 
-Show installation summary including version, language, hook status, plan file count, and OMC detection:
+Show installation summary including version, hook status, plan file count, and OMC detection:
 
 ```bash
 prism stats
@@ -439,7 +433,6 @@ prism stats
 Output:
 ```
   Version:   v0.4.0
-  Language:  en
   Plans:     2 file(s)
   OMC:       ✅ v4.1.1
   Hooks:
@@ -471,23 +464,6 @@ npx claude-prism uninstall
 ```
 
 This removes CLAUDE.md rules, slash commands, and hooks.
-
-## Languages
-
-Supported languages for UDEC rules:
-
-- **en** — English (default)
-- **ko** — Korean
-- **ja** — Japanese
-- **zh** — Chinese
-
-Change language (or re-install with different language):
-
-```bash
-npx claude-prism init --lang=ko    # Install Korean rules
-npx claude-prism init --lang=ja    # Install Japanese rules
-npx claude-prism init --lang=zh    # Install Chinese rules
-```
 
 ## OMC (oh-my-claudecode) Integration
 

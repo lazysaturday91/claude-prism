@@ -25,7 +25,6 @@ describe('config', () => {
   it('returns defaults when no config file exists', async () => {
     const { loadConfig, DEFAULTS } = await import('../lib/config.mjs');
     const config = loadConfig(tempDir);
-    assert.equal(config.language, 'en');
     assert.equal(config.hooks['commit-guard'].enabled, true);
     assert.equal(config.hooks['debug-loop'].blockAt, 5);
   });
@@ -33,11 +32,9 @@ describe('config', () => {
   it('merges user config with defaults', async () => {
     const { loadConfig } = await import('../lib/config.mjs');
     writeFileSync(join(tempDir, '.claude-prism.json'), JSON.stringify({
-      language: 'ko',
       hooks: { 'commit-guard': { maxTestAge: 600 } }
     }));
     const config = loadConfig(tempDir);
-    assert.equal(config.language, 'ko');
     assert.equal(config.hooks['commit-guard'].enabled, true); // default preserved
     assert.equal(config.hooks['commit-guard'].maxTestAge, 600); // user override
   });
@@ -46,7 +43,7 @@ describe('config', () => {
     const { loadConfig } = await import('../lib/config.mjs');
     writeFileSync(join(tempDir, '.claude-prism.json'), '{ broken json');
     const config = loadConfig(tempDir);
-    assert.equal(config.language, 'en');
+    assert.equal(config.hooks['commit-guard'].enabled, true);
   });
 
   it('blocks prototype pollution via __proto__', async () => {

@@ -26,14 +26,14 @@ describe('cli init', () => {
 
   it('creates .claude/commands/claude-prism/ with prism.md and checkpoint.md', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
     assert.ok(existsSync(join(projectDir, '.claude', 'commands', 'claude-prism', 'prism.md')));
     assert.ok(existsSync(join(projectDir, '.claude', 'commands', 'claude-prism', 'checkpoint.md')));
   });
 
   it('creates all 7 namespaced command files after init', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
     const nsDir = join(projectDir, '.claude', 'commands', 'claude-prism');
     const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md', 'update.md'];
     for (const cmd of expected) {
@@ -43,7 +43,7 @@ describe('cli init', () => {
 
   it('creates .claude/hooks/ when hooks option is true', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
     assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'commit-guard.mjs')));
     assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'debug-loop.mjs')));
     assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'test-tracker.mjs')));
@@ -52,54 +52,24 @@ describe('cli init', () => {
 
   it('skips hooks when hooks option is false', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     assert.ok(!existsSync(join(projectDir, '.claude', 'hooks', 'commit-guard.mjs')));
   });
 
   it('injects rules into CLAUDE.md with PRISM markers', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('<!-- PRISM:START -->'));
     assert.ok(content.includes('<!-- PRISM:END -->'));
     assert.ok(content.includes('UDEC'));
   });
 
-  it('uses korean rules when language is ko', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('이해 프로토콜'));
-  });
-
-  it('uses japanese rules when language is ja', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ja', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('PRISM:START'));
-    assert.ok(content.includes('UDEC'));
-  });
-
-  it('uses chinese rules when language is zh', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'zh', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('PRISM:START'));
-    assert.ok(content.includes('UDEC'));
-  });
-
-  it('falls back to english for unknown language', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'fr', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('Understanding Protocol'));
-  });
-
   // ─── rules strengthening tests ───
 
   it('english rules contain Assumption Detection section', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('Assumption Detection'));
     assert.ok(content.includes('Red Flag'));
@@ -107,7 +77,7 @@ describe('cli init', () => {
 
   it('english rules contain Scope Guard section', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('Scope Guard'));
     assert.ok(content.includes('Only change what was requested'));
@@ -115,43 +85,15 @@ describe('cli init', () => {
 
   it('english rules contain plan file template format', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('## Goal'));
     assert.ok(content.includes('## Batch'));
   });
 
-  it('korean rules contain assumption detection', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('가정 탐지'));
-  });
-
-  it('korean rules contain scope guard', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('스코프 가드'));
-  });
-
-  it('japanese rules contain assumption detection', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ja', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('仮定の検出'));
-  });
-
-  it('chinese rules contain assumption detection', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'zh', hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('假设检测'));
-  });
-
   it('preserves existing CLAUDE.md content', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('# My Project'));
     assert.ok(content.includes('Some rules.'));
@@ -159,19 +101,19 @@ describe('cli init', () => {
 
   it('replaces existing PRISM block on re-init', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: false });
-    await init(projectDir, { language: 'ko', hooks: false }); // re-init with ko
+    await init(projectDir, { hooks: false });
+    await init(projectDir, { hooks: false }); // re-init
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    // Should have Korean, not double injection
+    // Should not have double injection
     const starts = content.split('<!-- PRISM:START -->').length - 1;
     assert.equal(starts, 1);
-    assert.ok(content.includes('이해 프로토콜'));
+    assert.ok(content.includes('Understanding Protocol'));
   });
 
   it('creates CLAUDE.md if it does not exist', async () => {
     const { init } = await import('../lib/installer.mjs');
     rmSync(join(projectDir, 'CLAUDE.md')); // remove it
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     assert.ok(existsSync(join(projectDir, 'CLAUDE.md')));
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('<!-- PRISM:START -->'));
@@ -179,10 +121,10 @@ describe('cli init', () => {
 
   it('creates .claude-prism.json config file', async () => {
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: true });
+    await init(projectDir, { hooks: true });
     assert.ok(existsSync(join(projectDir, '.claude-prism.json')));
     const config = JSON.parse(readFileSync(join(projectDir, '.claude-prism.json'), 'utf8'));
-    assert.equal(config.language, 'ko');
+    assert.ok(config.hooks);
   });
 
   it('merges settings.json preserving existing hooks', async () => {
@@ -196,7 +138,7 @@ describe('cli init', () => {
         ]
       }
     }));
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
     const settings = JSON.parse(readFileSync(join(projectDir, '.claude', 'settings.json'), 'utf8'));
     // Should have both custom and prism hooks
     const preHooks = settings.hooks.PreToolUse;
@@ -220,7 +162,7 @@ describe('cli check', () => {
   it('returns all checks passing after init', async () => {
     const { init, check } = await import('../lib/installer.mjs');
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
     const result = check(projectDir);
     assert.ok(result.commands);
     assert.ok(result.rules);
@@ -239,7 +181,7 @@ describe('cli check', () => {
   it('reports hooks as false when not installed', async () => {
     const { init, check } = await import('../lib/installer.mjs');
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
-    await init(projectDir, { language: 'en', hooks: false });
+    await init(projectDir, { hooks: false });
     const result = check(projectDir);
     assert.equal(result.hooks, false);
     assert.ok(result.commands); // commands should still be there
@@ -255,7 +197,7 @@ describe('cli uninstall', () => {
     projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# My Project\n\nCustom rules here.\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {
@@ -352,18 +294,18 @@ describe('cli update', () => {
     projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# My Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {
     rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it('re-installs using language from .claude-prism.json', async () => {
+  it('re-installs rules from rules.md', async () => {
     const { update } = await import('../lib/installer.mjs');
     await update(projectDir);
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('이해 프로토콜')); // Korean
+    assert.ok(content.includes('Understanding Protocol'));
   });
 
   it('updates rules while preserving existing CLAUDE.md content', async () => {
@@ -424,7 +366,6 @@ describe('cli update', () => {
     // Create a project with legacy .prism.json
     rmSync(join(projectDir, '.claude-prism.json'));
     writeFileSync(join(projectDir, '.prism.json'), JSON.stringify({
-      language: 'ko',
       hooks: { 'commit-guard': { enabled: true } }
     }));
 
@@ -435,9 +376,9 @@ describe('cli update', () => {
     assert.ok(existsSync(join(projectDir, '.claude-prism.json')));
     // Legacy should be gone (removed during update)
     assert.ok(!existsSync(join(projectDir, '.prism.json')));
-    // Settings should be preserved
+    // Config should exist with hooks
     const config = JSON.parse(readFileSync(join(projectDir, '.claude-prism.json'), 'utf8'));
-    assert.equal(config.language, 'ko');
+    assert.ok(config.hooks);
   });
 });
 
@@ -450,7 +391,7 @@ describe('cli doctor', () => {
     projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {
@@ -520,7 +461,7 @@ describe('cli doctor', () => {
   it('detects legacy .prism.json and suggests migration', async () => {
     const { doctor } = await import('../lib/installer.mjs');
     // Create legacy .prism.json alongside new .claude-prism.json
-    writeFileSync(join(projectDir, '.prism.json'), JSON.stringify({ language: 'en' }));
+    writeFileSync(join(projectDir, '.prism.json'), JSON.stringify({ hooks: { 'commit-guard': { enabled: true } } }));
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
     assert.ok(result.issues.some(i => i.includes('Legacy .prism.json')));
@@ -537,17 +478,16 @@ describe('cli stats', () => {
     projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'ko', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {
     rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it('returns language and hook settings', async () => {
+  it('returns hook settings', async () => {
     const { stats } = await import('../lib/installer.mjs');
     const result = stats(projectDir);
-    assert.equal(result.language, 'ko');
     assert.ok(result.hooks);
     assert.equal(result.hooks['commit-guard'], true);
     assert.equal(result.hooks['scope-guard'], true);
@@ -578,7 +518,7 @@ describe('cli reset', () => {
     projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {

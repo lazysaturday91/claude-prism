@@ -66,7 +66,7 @@ describe('doctor OMC integration', () => {
     fakeHome = mkdtempSync(join(tmpdir(), 'prism-home-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {
@@ -102,7 +102,7 @@ describe('stats OMC integration', () => {
     fakeHome = mkdtempSync(join(tmpdir(), 'prism-home-'));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
     const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { language: 'en', hooks: true });
+    await init(projectDir, { hooks: true });
   });
 
   afterEach(() => {

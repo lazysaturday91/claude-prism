@@ -2,7 +2,7 @@
 
 /**
  * claude-prism CLI
- * Usage: prism init [--lang=ko] [--no-hooks]
+ * Usage: prism init [--no-hooks]
  *        prism check [--ci]
  *        prism doctor
  *        prism stats
@@ -15,11 +15,6 @@ import { init, check, uninstall, update, doctor, stats, reset, initGlobal, unins
 
 const args = process.argv.slice(2);
 const command = args[0];
-
-function getFlag(name) {
-  const flag = args.find(a => a.startsWith(`--${name}=`));
-  return flag ? flag.split('=')[1] : null;
-}
 
 function hasFlag(name) {
   return args.includes(`--${name}`) || args.includes(`-${name}`);
@@ -47,12 +42,11 @@ switch (command) {
       break;
     }
 
-    const language = getFlag('lang') || 'en';
     const hooks = !hasFlag('no-hooks');
 
     if (hasFlag('dry-run')) {
       const { dryRun } = await import('../lib/installer.mjs');
-      const result = dryRun(cwd, { language, hooks });
+      const result = dryRun(cwd, { hooks });
       console.log('🌈 claude-prism init --dry-run\n');
       console.log('  Files that would be created/updated:\n');
       for (const action of result.actions) {
@@ -64,7 +58,7 @@ switch (command) {
     }
 
     console.log('🌈 claude-prism init\n');
-    await init(cwd, { language, hooks });
+    await init(cwd, { hooks });
 
     console.log('✅ Rules injected → CLAUDE.md');
     console.log('✅ Commands installed → /prism, /checkpoint');
@@ -121,7 +115,6 @@ switch (command) {
     const result = stats(cwd);
     console.log('🌈 claude-prism stats\n');
     console.log(`  Version:   v${result.version}`);
-    console.log(`  Language:  ${result.language}`);
     console.log(`  Plans:     ${result.planFiles} file(s)`);
     console.log(`  OMC:       ${result.omc.detected ? `✅ v${result.omc.version || 'unknown'}` : '⏭️  not detected'}`);
     console.log('  Hooks:');
@@ -182,7 +175,7 @@ switch (command) {
     console.log(`🌈 claude-prism — AI coding problem decomposition tool
 
 Usage:
-  prism init [--lang=XX] [--no-hooks]   Install prism in current project
+  prism init [--no-hooks]                Install prism in current project
   prism init --global                    Install globally (~/.claude/) + OMC skill
   prism check [--ci]                     Verify installation
   prism doctor                           Diagnose issues with fix suggestions
@@ -194,7 +187,6 @@ Usage:
   prism uninstall --global               Remove global commands + OMC skill
 
 Options:
-  --lang=XX    Language: en (default), ko, ja, zh
   --no-hooks   Skip enforcement hooks
   --dry-run    Show what init would do without making changes
   --global     Install/uninstall globally (all projects)

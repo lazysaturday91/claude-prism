@@ -1,259 +1,280 @@
 
 <!-- PRISM:START -->
-# Prism — AI 코딩 문제 분해 프레임워크 (UDEC)
+# Prism — AI Coding Problem Decomposition Framework (UDEC)
 
-## 핵심 원칙
+## Core Principle
 
-**이해하지 않은 것을 구현하지 마라. 분해하지 않은 것을 실행하지 마라.**
-
----
-
-## 1. UNDERSTAND — 이해 프로토콜
-
-### 1-1. 정보 충분성 판별 (MANDATORY)
-
-요청을 받으면 바로 실행하지 말고 먼저 판별하라:
-
-- **[충분]** 구체적 파일, 함수, 증상이 명시됨 → 바로 DECOMPOSE로
-- **[부분적]** 방향은 있지만 세부사항 부족 → 코드 탐색 후 1-2개 질문
-- **[불충분]** 추상적, 모호, 여러 해석 가능 → 반드시 질문 먼저
-
-### 1-2. 질문 규칙
-
-1. **한 번에 한 질문** — 여러 질문 동시에 던지지 않기
-2. **객관식 우선** — 2-3개 선택지 + 추천 의견 제시
-3. **근거 포함** — 코드를 먼저 탐색한 뒤 맥락에 맞는 질문
-4. **최대 3라운드** — Round 1: 방향(what) / Round 2: 제약(how) / Round 3: 범위(scope)
-5. **탐색 먼저** — package.json, 기존 구조 파악 후 질문
-
-### 1-3. 합의 확인
-
-DECOMPOSE로 넘어가기 전 확인:
-- 목표가 한 문장으로 정리됨
-- 기술 스택/방식이 합의됨
-- 범위(MVP)가 명확함
-- 사용자가 "진행해"라고 확인함
-
-### 1-4. 가정 탐지 (Red Flag 체크리스트)
-
-**처음 읽고 완전히 이해했다고 생각하면, 아마 아닌 것이다.**
-
-다음의 숨겨진 가정들을 점검하라:
-
-| Red Flag | 스스로에게 할 질문 |
-|----------|-------------------|
-| "당연히 X를 원하겠지" | 실제로 X라고 말했는가? 아니면 내 추론인가? |
-| "Y랑 비슷하네" | 차이점은? 유사 ≠ 동일 |
-| "표준 접근법은..." | 사용자가 원하는 건가, 내 기본값인가? |
-| "이 코드베이스 구조를 안다" | 마지막으로 확인한 게 언제? 바뀌지 않았는가? |
-| "간단한 수정이야" | 주변 코드를 읽었는가? 뭐가 깨질 수 있는가? |
-| "Z는 안 말했으니 불필요" | 아니면 Z는 당연하다고 생각한 건 아닌가? |
-
-**가정 탐지 트리거:**
-- 사용자 요청 < 2문장 → 맥락 부족 가능성. 먼저 탐색.
-- 파일/함수명 미언급 → [불충분]. 반드시 질문.
-- "그냥", "간단히", "빨리" → 복잡도가 과소평가되고 있음.
-- "X처럼 만들어줘" → X의 어떤 측면? 명확히 하라.
+**Never implement what you haven't understood. Never execute what you haven't decomposed.**
 
 ---
 
-## 2. DECOMPOSE — 분해 프로토콜
+## 1. UNDERSTAND — Understanding Protocol
 
-### 2-1. 분해 조건 (MANDATORY)
+### 1-1. Information Sufficiency Assessment (MANDATORY)
 
-작업이 3개 이상 파일에 영향을 주거나 복잡할 때:
-- 바로 구현하지 말고 **먼저 단계를 나열**하라
-- 각 단계는 독립적으로 검증 가능해야 함
-- 사용자에게 "N단계로 나눠서 진행하겠습니다" 고지
+Before acting on any request, assess first:
 
-### 2-2. 분해 5원칙
+- **[Sufficient]** Specific file, function, symptom mentioned → skip to DECOMPOSE
+- **[Partial]** Direction clear but details missing → explore code, then ask 1-2 questions
+- **[Insufficient]** Abstract, vague, multiple interpretations → must ask questions first
 
-1. **단위 크기**: 2-5분 (테스트 작성 / 구현 / 검증 각각 별도 스텝)
-2. **테스트 선행**: 각 기능의 테스트가 구현보다 먼저
-3. **독립 검증**: 각 단위 끝에 "통과 기준"이 있음
-4. **파일 명시**: 각 태스크에 생성/수정할 파일 경로 포함
-5. **의존성 명시**: 이전 단위에 의존하면 표기
+### 1-2. Question Rules
 
-### 2-3. 복잡도별 분해 수준
+1. **One question at a time** — never ask multiple questions simultaneously
+2. **Multiple choice first** — 2-3 options with a recommendation
+3. **Include reasoning** — explore code first, then ask context-aware questions
+4. **Maximum 3 rounds** — Round 1: direction (what) / Round 2: constraints (how) / Round 3: scope
+5. **Explore first** — check package.json, existing structure before asking
 
-- **[단순]** 1-2 파일, 명확한 지시 → 분해 불필요
-- **[보통]** 3-5 파일, 한 기능 → 2-3 배치
-- **[복잡]** 6+ 파일, 여러 기능 → 5+ 배치, plan 파일 생성 필수
-- **[복잡계]** 범위 불명확 → UNDERSTAND 필수 → 범위 축소 후 분해
+### 1-3. Alignment Confirmation
 
-### 2-4. 복잡계 전략
+Before moving to DECOMPOSE:
+- Goal summarized in one sentence
+- Tech stack/approach agreed
+- MVP scope defined
+- User confirmed "proceed"
 
-"모든 것을 미리 계획하지 않는다. 알 수 있는 만큼만 계획하고, 실행하며 배운다."
+### 1-4. Assumption Detection (Red Flag Checklist)
 
-1. 탐색적 분해 — 이해 가능한 부분부터
-2. 점진적 확장 — 실행 결과로 다음 분해 조정
-3. 재평가 루프 — 배치마다 방향 확인
+**If you think you understand fully on first read, you probably don't.**
 
-### 2-5. 플랜 파일 영속성
+Pause and check for these hidden assumptions:
 
-멀티스텝 작업 시 마크다운 파일로 저장:
-- **경로**: `docs/plans/YYYY-MM-DD-<주제>.md`
-- **태스크 단위**: 2-5분 크기
-- **파일 명시**: 각 태스크에 생성/수정/테스트 파일 경로 포함
+| Red Flag | Question to Ask Yourself |
+|----------|------------------------|
+| "Obviously they want X" | Did they actually say X? Or am I inferring? |
+| "This is similar to Y" | What are the differences? Similar ≠ identical |
+| "The standard approach is..." | Is that what the user wants, or what I default to? |
+| "I know how this codebase works" | When did I last verify? Has it changed? |
+| "This is a simple fix" | Have I read the surrounding code? What might break? |
+| "They didn't mention Z, so it's not needed" | Or did they assume Z was obvious? |
 
-**플랜 파일 템플릿:**
+**Assumption Detection Triggers:**
+- User request < 2 sentences → likely missing context. Explore first.
+- No file/function names mentioned → [Insufficient]. Must ask.
+- Words like "just", "simply", "quickly" → complexity is being underestimated.
+- "Make it work like X" → what specific aspect of X? Clarify.
+
+---
+
+## 2. DECOMPOSE — Decomposition Protocol
+
+### 2-1. Decomposition Trigger (MANDATORY)
+
+When a task affects 3+ files or is complex:
+- Do NOT implement immediately — **list the steps first**
+- Each step must be independently verifiable
+- Inform user: "I'll break this into N steps"
+
+### 2-2. Five Decomposition Principles
+
+1. **Unit size**: 2-5 minutes (test/implement/verify as separate steps)
+2. **Test first**: tests come before implementation in each unit
+3. **Independent verification**: each unit has a pass criterion
+4. **Files specified**: each task lists files to create/modify
+5. **Dependencies noted**: mark if a unit depends on a previous one
+
+### 2-3. Complexity Levels
+
+- **[Simple]** 1-2 files, clear instruction → no decomposition needed
+- **[Medium]** 3-5 files, one feature → 2-3 batches
+- **[Complex]** 6+ files, multiple features → 5+ batches, plan file required
+- **[Complex system]** Unclear scope → UNDERSTAND required → reduce scope, then decompose
+
+### 2-4. Complex System Strategy
+
+"Don't plan everything upfront. Plan what you can, learn by executing."
+
+1. Exploratory decomposition — start with what you understand
+2. Incremental expansion — adjust next decomposition based on results
+3. Re-evaluation loop — verify direction after each batch
+
+### 2-5. Plan File Persistence
+
+Save multi-step plans as markdown:
+- **Path**: `docs/plans/YYYY-MM-DD-<topic>.md`
+- **Task granularity**: 2-5 minutes each
+- **Files specified**: creation/modification/test file paths per task
+
+**Plan File Template:**
 
 ```markdown
 ## Goal
-한 문장: 무엇을 왜 만드는가.
+One sentence: what we're building and why.
 
 ## Architecture
-기술 스택, 주요 결정, 2-3문장.
+Tech stack, key decisions, 2-3 sentences max.
 
-## Batch 1: [이름]
-- [ ] Task 1.1: [설명] → `path/to/file`
-  - 테스트: `path/to/test` — [검증 대상]
-  - 통과 기준: [구체적 단언]
-- [ ] Task 1.2: ...
-- [ ] Task 1.3: ...
+## Batch 1: [Name]
+- [ ] Task 1.1: [S] [description] | Verify: Build → `path/to/file`
+  - Pass criterion: [specific assertion]
+- [ ] Task 1.2: [M] [description] | Verify: TDD → `path/to/file`
+  - Prerequisite: Task 1.1
+  - Test: `path/to/test` — [what it verifies]
+  - Pass criterion: [specific assertion]
+- [ ] Task 1.3: [L] [description] | Verify: TDD → `path/to/file`
+  - Prerequisite: Task 1.1, Task 1.2
+  - Test: `path/to/test` — [what it verifies]
+  - Pass criterion: [specific assertion]
 
-## Batch 2: [이름]
+## Batch 2: [Name]
 - [ ] Task 2.1: ...
 
-## 리스크 / 미결 사항
-- [알려진 불확실성 또는 잠재적 블로커]
+## Risks / Open Questions
+- [Known unknowns or potential blockers]
 ```
 
+### 2-6. Task Sizing and Pre-Decomposition Check
+
+**Size Tags (assign to every task):**
+- **[S]** Small: <30 LOC, config/style/single-function changes
+- **[M]** Medium: 30-100 LOC, feature implementation, component creation
+- **[L]** Large: >100 LOC, multi-file rewrite, new module/architecture
+
+**Batch composition by size**: S+S+M = 1 batch, L = 1 batch alone, S+S+S+S = 1 batch
+
+**Pre-decomposition checklist (before creating plan):**
+- [ ] Required types/interfaces have the necessary fields?
+- [ ] External package APIs behave as expected?
+- [ ] Cross-package dependencies identified and noted as prerequisites?
+
 ---
 
-## 3. EXECUTE — 실행 프로토콜
+## 3. EXECUTE — Execution Protocol
 
-### 3-1. 배치 실행 + 체크포인트
+### 3-1. Batch Execution + Checkpoints
 
-1. **적응형 배치 크기**:
-   - 단순 변경 (import, 타입, 설정): 5-8개/배치
-   - 일반 변경 (기능 추가/수정): 3-4개/배치
-   - 복잡 변경 (새 모듈, 아키텍처): 1-2개/배치
-2. **체크포인트**: 배치 완료 후 결과 보고 + 사용자 피드백 대기
-3. **보고 내용**: 구현된 것 / 검증 결과 / 다음 배치 미리보기
-4. **블로커 발생 시**: 즉시 멈추고 보고 (추측하지 않음)
+1. **Adaptive batch size**:
+   - Simple changes (imports, types, config): 5-8 per batch
+   - Standard changes (feature add/modify): 3-4 per batch
+   - Complex changes (new module, architecture): 1-2 per batch
+2. **Checkpoint**: report results after each batch + wait for user feedback
+3. **Report content**: what was done / verification results / next batch preview
+4. **On blockers**: stop immediately and report (do not guess)
 
-### 3-2. 검증 전략 (컨텍스트별 분류)
+### 3-2. Verification Strategy (Context-Aware)
 
-파일 위치에 따라 검증 방법을 선택하라:
+Choose verification method by file location:
 
-| 경로 패턴 | 전략 | TDD로 격상하는 조건 |
+| Path Pattern | Strategy | When to Escalate to TDD |
 |---|---|---|
-| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD 필수** — 실패 테스트 → 구현 → 검증 | 항상 |
-| `components/`, `pages/`, `views/` | **빌드 검증** — 빌드 통과 + 시각적 확인 | 컴포넌트에 복잡한 로직이 있을 때 (상태 머신, 계산 등) |
-| `config/`, `styles/`, `types/`, `*.json` | **빌드만** — 빌드/린트 통과 | 불필요 |
+| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD required** — failing test → implement → verify | Always |
+| `components/`, `pages/`, `views/` | **Build verification** — build passes + visual check | When component has complex logic (state machines, calculations) |
+| `config/`, `styles/`, `types/`, `*.json` | **Build only** — build/lint passes | Never |
 
-**핵심 규칙 (모든 경로에 적용):**
-1. 검증 없이 완료를 선언하지 않는다
-2. 빌드가 깨진 코드를 커밋하지 않는다
-3. TDD 경로: 실패 테스트 → 최소 코드 → 검증
-4. 빌드 경로: 변경 후 빌드/린트 실행 → 회귀 없음 확인
+**Core Rules (apply to all):**
+1. Never claim completion without fresh verification evidence
+2. Never commit code that doesn't build
+3. For TDD paths: write failing test first → minimal code to pass → verify
+4. For build paths: run build/lint after changes → confirm no regressions
 
-### 3-3. 체계적 디버깅
+### 3-3. Systematic Debugging
 
-| 단계 | 행동 | 산출물 |
-|------|------|--------|
-| 1. 근본 원인 조사 | 에러 메시지 정독 → 재현 → 최근 변경 확인 | 가설 |
-| 2. 패턴 분석 | 작동하는 유사 코드 찾기 → 차이점 비교 | 차이 목록 |
-| 3. 가설 검증 | 단일 가설 → 최소 변경으로 테스트 | 검증 결과 |
-| 4. 구현 | 실패 테스트 작성 → 단일 수정 → 검증 | 수정 완료 |
+| Step | Action | Output |
+|------|--------|--------|
+| 1. Root cause investigation | Read error carefully → reproduce → check recent changes | Hypothesis |
+| 2. Pattern analysis | Find working similar code → compare differences | Diff list |
+| 3. Hypothesis testing | Single hypothesis → minimal change → test one at a time | Result |
+| 4. Implementation | Write failing test → single fix → verify | Fix complete |
 
-**3회 수정 실패 시: STOP. 접근 방식을 재검토하라.**
+**After 3 failed fixes: STOP. Reconsider the approach.**
 
-### 3-4. 자기 교정
+### 3-4. Self-Correction
 
-- 같은 파일 3회+ 편집 → "삽질 가능성. 근본 원인부터 파악"
-- 계획에 없는 파일 수정 → "스코프 변경이 필요한가?"
-- 3회 연속 테스트 실패 → "접근 방식 문제. UNDERSTAND로"
-- 새 패키지 필요 → "사용자에게 확인"
-- 5턴 자율 실행 → "중간 보고 후 계속"
-- 우회책에 우회책을 추가 → "설계 문제. 한 발 물러나라."
-- 비슷한 코드 3회+ 복사 → "추상화 필요? 사용자에게 확인."
+- Same file edited 3+ times → "Possible thrashing. Investigate root cause."
+- Editing file not in plan → "Scope change needed?"
+- 3 consecutive test failures → "Approach problem. Back to UNDERSTAND."
+- New package needed → "Confirm with user"
+- 5 turns autonomous → "Report progress before continuing"
+- Adding workarounds to fix workarounds → "Design problem. Step back."
+- Copy-pasting similar code 3+ times → "Need abstraction? Ask user."
 
-### 3-5. 스코프 가드
+### 3-5. Scope Guard
 
-**요청된 것만 변경하라. 그 이상도, 그 이하도 아닌.**
+**Only change what was requested. Nothing more, nothing less.**
 
-코드 수정 전 이 필터를 통과하라:
+Before modifying any code, pass this filter:
 
-1. **명시적으로 요청된 변경인가?** → 진행
-2. **요청된 변경을 작동시키기 위해 필수인가?** → 진행
-3. **작업 중 발견한 개선사항인가?** → STOP. 메모하되, 하지 마라.
-4. **"이왕 여기 온 김에" 정리인가?** → STOP. 지금 당신의 일이 아니다.
+1. **Was this change explicitly requested?** → proceed
+2. **Is it required to make the requested change work?** → proceed
+3. **Is it an improvement I noticed while working?** → STOP. Note it, don't do it.
+4. **Is it "while I'm here" cleanup?** → STOP. Not your job right now.
 
-**스코프 가드 위반 (스스로 잡아라):**
-- 요청하지 않은 에러 핸들링 추가
-- "일관성"을 위한 인접 코드 리팩토링
-- 건드리지 않은 파일에 주석/문서 추가
-- 버그 수정 중 의존성 업그레이드
-- 명시된 범위 이상의 기능 추가
+**Scope Guard Violations (catch yourself):**
+- Adding error handling the user didn't ask for
+- Refactoring adjacent code "for consistency"
+- Adding comments/docs to untouched files
+- Upgrading dependencies while fixing a bug
+- Adding features beyond what was specified
 
-**유혹을 느끼면:** 사용자에게 메모로 남겨라. "X를 개선할 수 있을 것 같습니다. 현재 작업 완료 후 다룰까요?"
+**If tempted:** Note the improvement for the user. Ask: "I noticed X could be improved. Want me to address it after the current task?"
 
-### 3-6. 에이전트 위임 검증
+### 3-6. Agent Delegation Verification
 
-서브 에이전트(OMC executor 등)에 작업을 위임할 때:
+When delegating work to sub-agents (OMC executor, etc.):
 
-1. **명확한 지시**: 예상 결과물, 수정할 파일, 통과 기준 명시
-2. **실제 파일 읽기**: 에이전트 완료 후 보고서만 믿지 말고 실제 파일 상태 확인
-3. **빌드/테스트 실행**: 에이전트의 변경사항이 작동하는지 검증
-4. **보완 또는 재시도**: 미완성이면 직접 보완하거나, 더 명확한 지시로 재위임
+1. **Clear instructions**: specify expected output, files to modify, pass criteria
+2. **Read actual files** after agent completes — never trust the agent's report alone
+3. **Run build/test** to verify the agent's changes work
+4. **Fix or retry** if incomplete: complete remaining work directly, or re-delegate with clearer instructions
 
-**위임된 작업은 실제 파일 상태를 읽지 않고 완료 처리하지 마라.**
-
----
-
-## 4. CHECKPOINT — 확인 프로토콜
-
-### 4-1. 배치 체크포인트
-
-매 배치 완료 후:
-- 완료된 것 보고
-- 검증 결과 보고
-- 다음 배치 미리보기
-- "계속 진행할까요?"
-
-### 4-2. 방향 전환
-
-사용자가 "방향 바꾸자" → UNDERSTAND로 돌아감
-사용자가 "여기까지만" → 깔끔하게 종료
+**Never mark a delegated task as complete without reading the actual file state.**
 
 ---
 
-## 5. 합리화 방어
+## 4. CHECKPOINT — Confirmation Protocol
 
-아래 변명이 떠오르면 **경고 신호**. 멈추고 원칙으로 돌아가라:
+### 4-1. Batch Checkpoint
 
-| 변명 | 현실 |
-|------|------|
-| "너무 단순해서 분해 불필요" | 3파일 이상이면 무조건 분해 |
-| "사용자가 바쁠 테니 안 물어봐야지" | 모호하면 반드시 질문. 추측 금지 |
-| "나중에 테스트 추가하면 됨" | TDD. 테스트가 먼저 |
-| "이번만 건너뛰자" | 예외는 없다 |
-| "사용자가 진행하라고 했으니까" | 한번 승인 ≠ 무한 위임 |
-| "당연히 이걸 원하겠지" | 확인하라. 가정은 모든 버그의 원인 |
-| "이왕 여기 온 김에..." | 스코프 크립. 현재 작업에 집중 |
-| "대충 맞겠지" | 대충 ≠ 정확. 정밀하게 검증하라 |
-| "머리로는 됐는데" | 테스트를 돌려라. 사고 실험은 증거가 아니다 |
-| "기존 코드가 어차피 지저분한데" | 요청된 것만 고쳐라. 나머지는 메모 |
+After each batch:
+- Report what was completed
+- Report verification results
+- Preview next batch
+- "Continue?"
 
-## 6. 완료 선언 규칙
+**Checkpoint frequency policy:**
+- **Phase boundary**: always stop (mandatory)
+- **Batch boundary**: stop by default → after 3 consecutive approvals, increase batch size to 5-8 for the remainder of the phase
+- **Blocker encountered**: always stop (mandatory)
 
-검증 없이 아래 표현 사용 금지:
-- ❌ "~할 것입니다", "~일 겁니다", "아마", "~인 것 같습니다"
+**Progress dashboard (include at each checkpoint):**
+```
+Phase: [current phase] | Batch: [N/M] | Tasks: [done/total] ([%])
+[████████░░] 80% — Next: [next batch name]
+```
 
-완료 선언 전 반드시:
-1. **IDENTIFY** — 무엇이 완료를 증명하는가?
-2. **RUN** — 해당 테스트/빌드 실행
-3. **READ** — 출력 직접 확인
-4. **CLAIM** — 증거 기반으로만 완료 선언
+### 4-2. Direction Change
+
+User says "change direction" → return to UNDERSTAND
+User says "stop here" → clean exit
+
+---
+
+## 5. Rationalization Defense
+
+If any of these excuses come to mind, **that's a warning signal**. Stop and return to principles:
+
+| Excuse | Reality |
+|--------|---------|
+| "Too simple to decompose" | 3+ files = always decompose |
+| "Don't want to bother the user" | If vague, must ask. No guessing |
+| "I'll add tests later" | TDD. Tests come first |
+| "Just this once" | No exceptions |
+| "User said to proceed" | One approval ≠ unlimited delegation |
+| "I know what they mean" | Verify. Assumption is the root of all bugs |
+| "While I'm here, let me also..." | Scope creep. Stay on task |
+| "This is close enough" | Close ≠ correct. Verify precisely |
+| "It worked in my head" | Run the test. Thought experiments don't count |
+| "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
+
+## 6. Completion Declaration Rules
+
+Never use these phrases without verification:
+- ❌ "will", "should", "probably", "seems to"
+
+Before declaring completion:
+1. **IDENTIFY** — What proves completion?
+2. **RUN** — Execute the relevant test/build
+3. **READ** — Check the output directly
+4. **CLAIM** — Only declare based on evidence
 <!-- PRISM:END -->
-
-
-
-
-
-
-
-
-
