@@ -44,10 +44,9 @@ describe('cli init', () => {
   it('creates .claude/hooks/ when hooks option is true', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: true });
-    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'commit-guard.mjs')));
-    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'debug-loop.mjs')));
-    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'test-tracker.mjs')));
-    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'scope-guard.mjs')));
+    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'pre-tool.mjs')));
+    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'post-tool.mjs')));
+    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'user-prompt.mjs')));
   });
 
   it('skips hooks when hooks option is false', async () => {
@@ -416,10 +415,10 @@ describe('cli doctor', () => {
 
   it('detects missing hook files', async () => {
     const { doctor } = await import('../lib/installer.mjs');
-    rmSync(join(projectDir, '.claude', 'hooks', 'commit-guard.mjs'));
+    rmSync(join(projectDir, '.claude', 'hooks', 'pre-tool.mjs'));
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
-    assert.ok(result.issues.some(i => i.includes('commit-guard')));
+    assert.ok(result.issues.some(i => i.includes('pre-tool')));
   });
 
   it('detects corrupted CLAUDE.md (missing PRISM block)', async () => {
