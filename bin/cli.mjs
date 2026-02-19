@@ -60,12 +60,12 @@ switch (command) {
     console.log('🌈 claude-prism init\n');
     await init(cwd, { hooks });
 
-    console.log('✅ Rules injected → CLAUDE.md');
-    console.log('✅ Commands installed → /prism, /checkpoint');
+    console.log('✅ UDEC methodology → CLAUDE.md');
+    console.log('✅ Commands → /prism, /checkpoint, /plan');
     if (hooks) {
-      console.log('✅ Hooks installed → commit-guard, debug-loop, test-tracker, scope-guard');
+      console.log('✅ Commit guard → blocks commits with failing tests');
     } else {
-      console.log('⏭️  Hooks skipped (use --no-hooks to skip)');
+      console.log('⏭️  Hooks skipped (--no-hooks)');
     }
     console.log('\n🌈 Done. Use /prism before complex tasks.');
     break;
@@ -127,8 +127,8 @@ switch (command) {
   case 'reset': {
     console.log('🌈 claude-prism reset\n');
     reset();
-    console.log('✅ Hook state cleared (edit counters, test timestamps)');
-    console.log('\n🌈 Fresh start. All hooks reset.');
+    console.log('✅ Hook state cleared');
+    console.log('\n🌈 Fresh start.');
     break;
   }
 
@@ -164,15 +164,15 @@ switch (command) {
 
     console.log('🌈 claude-prism update\n');
     await update(cwd);
-    console.log('✅ Rules updated');
+    console.log('✅ UDEC methodology updated');
     console.log('✅ Commands updated');
-    console.log('✅ Hooks updated');
+    console.log('✅ Commit guard updated');
     console.log('\n🌈 Prism updated to latest.');
     break;
   }
 
   default: {
-    console.log(`🌈 claude-prism — AI coding problem decomposition tool
+    console.log(`🌈 claude-prism — UDEC methodology framework for AI coding agents
 
 Usage:
   prism init [--no-hooks]                Install prism in current project
@@ -180,14 +180,14 @@ Usage:
   prism check [--ci]                     Verify installation
   prism doctor                           Diagnose issues with fix suggestions
   prism stats                            Show installation summary
-  prism reset                            Clear hook state (edit counters, etc.)
+  prism reset                            Clear hook state
   prism update                           Re-install using current config
   prism update --global                  Update global commands + OMC skill
   prism uninstall                        Remove prism from current project
   prism uninstall --global               Remove global commands + OMC skill
 
 Options:
-  --no-hooks   Skip enforcement hooks
+  --no-hooks   Skip commit guard hook
   --dry-run    Show what init would do without making changes
   --global     Install/uninstall globally (all projects)
   --ci         Output JSON for CI integration

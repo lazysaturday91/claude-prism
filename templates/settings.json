@@ -14,22 +14,11 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|Bash",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "node .claude/hooks/post-tool.mjs",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/user-prompt.mjs",
             "timeout": 5000
           }
         ]

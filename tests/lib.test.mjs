@@ -26,7 +26,7 @@ describe('config', () => {
     const { loadConfig, DEFAULTS } = await import('../lib/config.mjs');
     const config = loadConfig(tempDir);
     assert.equal(config.hooks['commit-guard'].enabled, true);
-    assert.equal(config.hooks['debug-loop'].blockAt, 5);
+    assert.equal(config.hooks['test-tracker'].enabled, true);
   });
 
   it('merges user config with defaults', async () => {
@@ -57,10 +57,9 @@ describe('config', () => {
 
   it('getHookConfig returns specific hook settings', async () => {
     const { getHookConfig } = await import('../lib/config.mjs');
-    const hookConfig = getHookConfig('debug-loop', tempDir);
+    const hookConfig = getHookConfig('commit-guard', tempDir);
     assert.equal(hookConfig.enabled, true);
-    assert.equal(hookConfig.warnAt, 3);
-    assert.equal(hookConfig.blockAt, 5);
+    assert.equal(hookConfig.maxTestAge, 300);
   });
 });
 

@@ -46,7 +46,6 @@ describe('cli init', () => {
     await init(projectDir, { hooks: true });
     assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'pre-tool.mjs')));
     assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'post-tool.mjs')));
-    assert.ok(existsSync(join(projectDir, '.claude', 'hooks', 'user-prompt.mjs')));
   });
 
   it('skips hooks when hooks option is false', async () => {
@@ -489,7 +488,7 @@ describe('cli stats', () => {
     const result = stats(projectDir);
     assert.ok(result.hooks);
     assert.equal(result.hooks['commit-guard'], true);
-    assert.equal(result.hooks['scope-guard'], true);
+    assert.equal(result.hooks['test-tracker'], true);
   });
 
   it('returns version from package.json', async () => {
