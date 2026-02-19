@@ -69,6 +69,13 @@ export const debugLoop = {
   }
 };
 
+// Common statement prefixes that don't indicate "same area"
+const BOILERPLATE_RE = /^(?:import\s.*?from\s|import\s*\{|export\s+(?:default\s+)?(?:const|let|var|function|class|interface|type)\s|const\s|let\s|var\s|function\s|return\s)/;
+
+function stripBoilerplate(snippet) {
+  return snippet.replace(BOILERPLATE_RE, '').trim();
+}
+
 function analyzePattern(log) {
   if (log.length < 3) return null;
   const recent = log.slice(-3).map(e => e.snippet);
@@ -80,11 +87,18 @@ function analyzePattern(log) {
   const uniqueSnippets = new Set(recent).size;
   if (uniqueSnippets === 1) return 'divergent';
 
-  // Check for meaningful overlap using longer window
-  const baseSnippet = recent[0].slice(0, 40);
-  // Skip overlap check if base is too short for meaningful comparison
-  if (baseSnippet.length < 10) return uniqueSnippets <= 2 ? 'divergent' : 'convergent';
+  // Strip boilerplate prefixes before comparing (import X from, const, etc.)
+  const stripped = recent.map(stripBoilerplate);
+  const uniqueStripped = new Set(stripped).size;
 
-  const overlap = recent.filter(s => s.includes(baseSnippet)).length;
-  return overlap >= 2 ? 'divergent' : 'convergent';
+  // After stripping, if all unique → editing different areas
+  if (uniqueStripped === recent.length) return 'convergent';
+
+  // Check for meaningful overlap using stripped content
+  const baseSnippet = stripped[0].slice(0, 30);
+  if (baseSnippet.length < 10) return uniqueStripped <= 1 ? 'divergent' : 'convergent';
+
+  // Require all 3 to overlap (stricter than previous >= 2)
+  const overlap = stripped.filter(s => s.includes(baseSnippet)).length;
+  return overlap >= 3 ? 'divergent' : 'convergent';
 }

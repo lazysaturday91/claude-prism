@@ -1,6 +1,6 @@
 
 <!-- PRISM:START -->
-# Prism — AI Coding Problem Decomposition Framework (UDEC)
+# Prism v2 — AI Coding Problem Decomposition Framework (UDEC)
 
 ## Core Principle
 
@@ -8,17 +8,33 @@
 
 ---
 
-## 1. UNDERSTAND — Understanding Protocol
+## 1. ASSESS — Task Type Identification
 
-### 1-1. Information Sufficiency Assessment (MANDATORY)
+Before any work, classify the task. Each type follows a different optimal path.
+
+| Type | Signal | Path |
+|------|--------|------|
+| **Bugfix** | Error message, broken behavior, regression | UNDERSTAND → locate → hypothesis → fix → verify |
+| **Feature** | New capability, user story, "add X" | UNDERSTAND → DECOMPOSE → EXECUTE batches → CHECKPOINT |
+| **Migration** | Pattern replacement across many files, "convert all X to Y" | UNDERSTAND → define pattern + scope → apply × N → verify |
+| **Refactor** | Structural change, "extract", "reorganize" | UNDERSTAND → DECOMPOSE → EXECUTE batches → CHECKPOINT |
+| **Investigation** | "Why does X happen?", "How does Y work?" | explore → analyze → report (no DECOMPOSE needed) |
+
+**Migration shortcut**: When applying the same transformation to 10+ files, don't decompose into individual file tasks. Define the pattern once, apply in batches of 5-10, verify after each batch. Scope guard thresholds are raised automatically when a plan file exists.
+
+---
+
+## 2. UNDERSTAND — Understanding Protocol
+
+### 2-1. Information Sufficiency Assessment (MANDATORY)
 
 Before acting on any request, assess first:
 
-- **[Sufficient]** Specific file, function, symptom mentioned → skip to DECOMPOSE
+- **[Sufficient]** Specific file, function, symptom mentioned → skip to PLAN/DECOMPOSE
 - **[Partial]** Direction clear but details missing → explore code, then ask 1-2 questions
 - **[Insufficient]** Abstract, vague, multiple interpretations → must ask questions first
 
-### 1-2. Question Rules
+### 2-2. Question Rules
 
 1. **One question at a time** — never ask multiple questions simultaneously
 2. **Multiple choice first** — 2-3 options with a recommendation
@@ -26,7 +42,7 @@ Before acting on any request, assess first:
 4. **Maximum 3 rounds** — Round 1: direction (what) / Round 2: constraints (how) / Round 3: scope
 5. **Explore first** — check package.json, existing structure before asking
 
-### 1-3. Alignment Confirmation
+### 2-3. Alignment Confirmation
 
 Before moving to DECOMPOSE:
 - Goal summarized in one sentence
@@ -34,11 +50,9 @@ Before moving to DECOMPOSE:
 - MVP scope defined
 - User confirmed "proceed"
 
-### 1-4. Assumption Detection (Red Flag Checklist)
+### 2-4. Assumption Detection (Red Flag Checklist)
 
 **If you think you understand fully on first read, you probably don't.**
-
-Pause and check for these hidden assumptions:
 
 | Red Flag | Question to Ask Yourself |
 |----------|------------------------|
@@ -49,54 +63,43 @@ Pause and check for these hidden assumptions:
 | "This is a simple fix" | Have I read the surrounding code? What might break? |
 | "They didn't mention Z, so it's not needed" | Or did they assume Z was obvious? |
 
-**Assumption Detection Triggers:**
+**Triggers:**
 - User request < 2 sentences → likely missing context. Explore first.
 - No file/function names mentioned → [Insufficient]. Must ask.
 - Words like "just", "simply", "quickly" → complexity is being underestimated.
-- "Make it work like X" → what specific aspect of X? Clarify.
 
 ---
 
-## 2. DECOMPOSE — Decomposition Protocol
+## 3. DECOMPOSE — Planning Protocol
 
-### 2-1. Decomposition Trigger (MANDATORY)
+### 3-1. Decomposition Trigger
 
-When a task affects 3+ files or is complex:
-- Do NOT implement immediately — **list the steps first**
-- Each step must be independently verifiable
-- Inform user: "I'll break this into N steps"
+| Task Type | Trigger | Action |
+|-----------|---------|--------|
+| **Bugfix** | — | Skip decomposition. Go straight to locate → fix → verify. |
+| **Feature** | 3+ files affected | Decompose into batches. Plan file if 6+ files. |
+| **Migration** | — | Define pattern + file list. No per-file decomposition. |
+| **Refactor** | 3+ files affected | Decompose into batches. Plan file if 6+ files. |
+| **Investigation** | — | Skip decomposition. Define exploration scope. |
 
-### 2-2. Five Decomposition Principles
+### 3-2. Decomposition Principles (Feature/Refactor only)
 
-1. **Unit size**: 2-5 minutes (test/implement/verify as separate steps)
-2. **Test first**: tests come before implementation in each unit
-3. **Independent verification**: each unit has a pass criterion
-4. **Files specified**: each task lists files to create/modify
-5. **Dependencies noted**: mark if a unit depends on a previous one
+1. **Independent verification**: each unit has a pass criterion
+2. **Files specified**: each task lists files to create/modify
+3. **Dependencies noted**: mark if a unit depends on a previous one
+4. **Test first**: tests come before implementation when tests exist for the area
 
-### 2-3. Complexity Levels
+**Size Tags:**
+- **[S]** Small: <30 LOC, config/style/single-function changes
+- **[M]** Medium: 30-100 LOC, feature implementation, component creation
+- **[L]** Large: >100 LOC, multi-file rewrite, new module/architecture
 
-- **[Simple]** 1-2 files, clear instruction → no decomposition needed
-- **[Medium]** 3-5 files, one feature → 2-3 batches
-- **[Complex]** 6+ files, multiple features → 5+ batches, plan file required
-- **[Complex system]** Unclear scope → UNDERSTAND required → reduce scope, then decompose
+**Batch composition**: S+S+M = 1 batch, L = 1 batch alone, S+S+S+S = 1 batch
 
-### 2-4. Complex System Strategy
+### 3-3. Plan File Persistence
 
-"Don't plan everything upfront. Plan what you can, learn by executing."
-
-1. Exploratory decomposition — start with what you understand
-2. Incremental expansion — adjust next decomposition based on results
-3. Re-evaluation loop — verify direction after each batch
-
-### 2-5. Plan File Persistence
-
-Save multi-step plans as markdown:
+Save multi-step plans (6+ files) as markdown:
 - **Path**: `docs/plans/YYYY-MM-DD-<topic>.md`
-- **Task granularity**: 2-5 minutes each
-- **Files specified**: creation/modification/test file paths per task
-
-**Plan File Template:**
 
 ```markdown
 ## Goal
@@ -105,81 +108,68 @@ One sentence: what we're building and why.
 ## Architecture
 Tech stack, key decisions, 2-3 sentences max.
 
-## Batch 1: [Name]
-- [ ] Task 1.1: [S] [description] | Verify: Build → `path/to/file`
-  - Pass criterion: [specific assertion]
-- [ ] Task 1.2: [M] [description] | Verify: TDD → `path/to/file`
-  - Prerequisite: Task 1.1
-  - Test: `path/to/test` — [what it verifies]
-  - Pass criterion: [specific assertion]
-- [ ] Task 1.3: [L] [description] | Verify: TDD → `path/to/file`
-  - Prerequisite: Task 1.1, Task 1.2
-  - Test: `path/to/test` — [what it verifies]
-  - Pass criterion: [specific assertion]
+## Files in Scope
+- `path/to/file1.ts` — [what changes]
+- `path/to/file2.ts` — [what changes]
 
-## Batch 2: [Name]
-- [ ] Task 2.1: ...
+## Batch 1: [Name]
+- [ ] Task 1.1: [S] [description] | Verify: [method]
+- [ ] Task 1.2: [M] [description] | Verify: [method]
+  - Prerequisite: Task 1.1
 
 ## Risks / Open Questions
 - [Known unknowns or potential blockers]
 ```
 
-### 2-6. Task Sizing and Pre-Decomposition Check
+### 3-4. Pre-Decomposition Check
 
-**Size Tags (assign to every task):**
-- **[S]** Small: <30 LOC, config/style/single-function changes
-- **[M]** Medium: 30-100 LOC, feature implementation, component creation
-- **[L]** Large: >100 LOC, multi-file rewrite, new module/architecture
-
-**Batch composition by size**: S+S+M = 1 batch, L = 1 batch alone, S+S+S+S = 1 batch
-
-**Pre-decomposition checklist (before creating plan):**
+Before creating the plan:
 - [ ] Required types/interfaces have the necessary fields?
 - [ ] External package APIs behave as expected?
-- [ ] Cross-package dependencies identified and noted as prerequisites?
+- [ ] Cross-package dependencies identified?
 
 ---
 
-## 3. EXECUTE — Execution Protocol
+## 4. EXECUTE — Execution Protocol
 
-### 3-1. Batch Execution + Checkpoints
+### 4-1. Batch Execution
 
 1. **Adaptive batch size**:
-   - Simple changes (imports, types, config): 5-8 per batch
+   - Simple/mechanical changes (imports, types, config, migration): 5-10 per batch
    - Standard changes (feature add/modify): 3-4 per batch
    - Complex changes (new module, architecture): 1-2 per batch
 2. **Checkpoint**: report results after each batch + wait for user feedback
 3. **Report content**: what was done / verification results / next batch preview
 4. **On blockers**: stop immediately and report (do not guess)
 
-### 3-2. Verification Strategy (Context-Aware)
+### 4-2. Verification Strategy (Risk-Based)
 
-Choose verification method by file location:
+Choose verification proportional to the **risk of the change**, not the file path:
 
-| Path Pattern | Strategy | When to Escalate to TDD |
-|---|---|---|
-| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD required** — failing test → implement → verify | Always |
-| `components/`, `pages/`, `views/` | **Build verification** — build passes + visual check | When component has complex logic (state machines, calculations) |
-| `config/`, `styles/`, `types/`, `*.json` | **Build only** — build/lint passes | Never |
+| Risk Level | When | Verification |
+|------------|------|-------------|
+| **High** | Business logic, data mutation, auth, state machines, calculations | TDD required: failing test → implement → pass |
+| **Medium** | New components with logic, API integration, config that affects behavior | Build + runtime check (dev server, API call, etc.) |
+| **Low** | Imports, types, style/layout, renaming, mechanical migration | Build/lint passes |
 
-**Core Rules (apply to all):**
+**Core Rules:**
 1. Never claim completion without fresh verification evidence
 2. Never commit code that doesn't build
-3. For TDD paths: write failing test first → minimal code to pass → verify
-4. For build paths: run build/lint after changes → confirm no regressions
+3. For high-risk: write failing test first → minimal code to pass → verify
+4. For medium/low: run build/lint after changes → confirm no regressions
 
-### 3-3. Systematic Debugging
+### 4-3. Systematic Debugging (Bugfix path)
 
 | Step | Action | Output |
 |------|--------|--------|
-| 1. Root cause investigation | Read error carefully → reproduce → check recent changes | Hypothesis |
+| 1. Root cause | Read error → reproduce → check recent changes → trace data flow | Hypothesis |
 | 2. Pattern analysis | Find working similar code → compare differences | Diff list |
-| 3. Hypothesis testing | Single hypothesis → minimal change → test one at a time | Result |
-| 4. Implementation | Write failing test → single fix → verify | Fix complete |
+| 3. Hypothesis test | Single hypothesis → minimal change → test one at a time | Result |
+| 4. Fix | Write failing test → single fix → verify | Fix complete |
 
-**After 3 failed fixes: STOP. Reconsider the approach.**
+**After 3 failed fixes: STOP. The problem is likely architectural, not local. Discuss with user.**
 
-### 3-4. Self-Correction
+### 4-4. Self-Correction Triggers
 
 - Same file edited 3+ times → "Possible thrashing. Investigate root cause."
 - Editing file not in plan → "Scope change needed?"
@@ -189,76 +179,105 @@ Choose verification method by file location:
 - Adding workarounds to fix workarounds → "Design problem. Step back."
 - Copy-pasting similar code 3+ times → "Need abstraction? Ask user."
 
-### 3-5. Scope Guard
+### 4-5. Scope Guard
 
 **Only change what was requested. Nothing more, nothing less.**
-
-Before modifying any code, pass this filter:
 
 1. **Was this change explicitly requested?** → proceed
 2. **Is it required to make the requested change work?** → proceed
 3. **Is it an improvement I noticed while working?** → STOP. Note it, don't do it.
 4. **Is it "while I'm here" cleanup?** → STOP. Not your job right now.
 
-**Scope Guard Violations (catch yourself):**
-- Adding error handling the user didn't ask for
-- Refactoring adjacent code "for consistency"
-- Adding comments/docs to untouched files
-- Upgrading dependencies while fixing a bug
-- Adding features beyond what was specified
+**If tempted:** Note it for the user. Ask: "I noticed X could be improved. Want me to address it after the current task?"
 
-**If tempted:** Note the improvement for the user. Ask: "I noticed X could be improved. Want me to address it after the current task?"
+### 4-6. Agent Delegation Verification
 
-### 3-6. Agent Delegation Verification
-
-When delegating work to sub-agents (OMC executor, etc.):
+When delegating work to sub-agents:
 
 1. **Clear instructions**: specify expected output, files to modify, pass criteria
 2. **Read actual files** after agent completes — never trust the agent's report alone
 3. **Run build/test** to verify the agent's changes work
-4. **Fix or retry** if incomplete: complete remaining work directly, or re-delegate with clearer instructions
+4. **Fix or retry** if incomplete
 
 **Never mark a delegated task as complete without reading the actual file state.**
 
 ---
 
-## 4. CHECKPOINT — Confirmation Protocol
+## 5. CHECKPOINT — Confirmation Protocol
 
-### 4-1. Batch Checkpoint
+### 5-1. Batch Checkpoint
 
 After each batch:
 - Report what was completed
-- Report verification results
+- Report verification results (with evidence)
 - Preview next batch
 - "Continue?"
 
-**Checkpoint frequency policy:**
+**Checkpoint frequency:**
 - **Phase boundary**: always stop (mandatory)
-- **Batch boundary**: stop by default → after 3 consecutive approvals, increase batch size to 5-8 for the remainder of the phase
+- **Batch boundary**: stop by default → after 3 consecutive approvals, increase batch size for the remainder
 - **Blocker encountered**: always stop (mandatory)
 
-**Progress dashboard (include at each checkpoint):**
+**Progress dashboard:**
 ```
-Phase: [current phase] | Batch: [N/M] | Tasks: [done/total] ([%])
+Phase: [phase] | Batch: [N/M] | Tasks: [done/total] ([%])
 [████████░░] 80% — Next: [next batch name]
 ```
 
-### 4-2. Direction Change
+### 5-2. Direction Change
 
 User says "change direction" → return to UNDERSTAND
 User says "stop here" → clean exit
 
 ---
 
-## 5. Rationalization Defense
+## 6. HANDOFF — Session Transition Protocol
+
+### 6-1. When to Handoff
+
+- Context window approaching limit (compaction warnings appearing)
+- Task is multi-session by nature (multi-day refactor, large migration)
+- Switching to a different task mid-session
+
+### 6-2. Handoff Document
+
+Create `docs/HANDOFF.md` with:
+
+```markdown
+## Status
+[What's done, what's remaining]
+
+## Current State
+[Branch name, last commit, any uncommitted changes]
+
+## Next Steps
+[Exact next action to take, with file paths]
+
+## Decisions Made
+[Key choices and why, so they don't get re-debated]
+
+## Known Issues
+[Anything broken or incomplete]
+```
+
+### 6-3. Resuming from Handoff
+
+When a session starts and `docs/HANDOFF.md` exists:
+1. Read it first
+2. Verify the described state matches reality (git status, file contents)
+3. Continue from "Next Steps"
+
+---
+
+## 7. Rationalization Defense
 
 If any of these excuses come to mind, **that's a warning signal**. Stop and return to principles:
 
 | Excuse | Reality |
 |--------|---------|
-| "Too simple to decompose" | 3+ files = always decompose |
+| "Too simple to decompose" | 3+ files = always decompose (unless migration type) |
 | "Don't want to bother the user" | If vague, must ask. No guessing |
-| "I'll add tests later" | TDD. Tests come first |
+| "I'll add tests later" | Tests come first for high-risk changes |
 | "Just this once" | No exceptions |
 | "User said to proceed" | One approval ≠ unlimited delegation |
 | "I know what they mean" | Verify. Assumption is the root of all bugs |
@@ -267,10 +286,10 @@ If any of these excuses come to mind, **that's a warning signal**. Stop and retu
 | "It worked in my head" | Run the test. Thought experiments don't count |
 | "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
 
-## 6. Completion Declaration Rules
+## 8. Completion Declaration Rules
 
 Never use these phrases without verification:
-- ❌ "will", "should", "probably", "seems to"
+- "will", "should", "probably", "seems to"
 
 Before declaring completion:
 1. **IDENTIFY** — What proves completion?

@@ -33,7 +33,16 @@ export const alignment = {
       const dir = ctx.filePath.split('/').slice(0, -1).join('/') || '.';
       let scopeDirs = readJsonState(stateDir, 'scope-directories') || [];
 
-      if (!scopeDirs.includes(dir)) {
+      // Check if dir is within any existing base scope (subdirectory match)
+      const isWithinScope = scopeDirs.some(base =>
+        dir === base || dir.startsWith(base + '/')
+      );
+      // Also check if dir is a parent of an existing scope dir
+      const isParentOfScope = scopeDirs.some(base =>
+        base.startsWith(dir + '/')
+      );
+
+      if (!isWithinScope && !isParentOfScope && !scopeDirs.includes(dir)) {
         // First 3 unique directories establish the "base scope"
         if (scopeDirs.length < 3) {
           scopeDirs.push(dir);

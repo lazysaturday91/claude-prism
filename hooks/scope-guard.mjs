@@ -69,11 +69,19 @@ export const scopeGuard = {
     }
 
     if (hasPlan) {
-      warnAt *= 2;
-      blockAt *= 2;
+      const multiplier = config.planMultiplier || 3;
+      warnAt *= multiplier;
+      blockAt *= multiplier;
     }
 
     if (count >= blockAt) {
+      // With a plan: downgrade block → warn (planned large tasks are expected)
+      if (hasPlan) {
+        return {
+          type: 'warn',
+          message: getMessage(lang, 'scope-guard.block-with-plan', { count, blockAt })
+        };
+      }
       return {
         type: 'block',
         message: getMessage(lang, 'scope-guard.block', { count })
@@ -81,9 +89,10 @@ export const scopeGuard = {
     }
 
     if (count >= warnAt) {
+      const msgKey = hasPlan ? 'scope-guard.warn-with-plan' : 'scope-guard.warn';
       return {
         type: 'warn',
-        message: getMessage(lang, 'scope-guard.warn', { count })
+        message: getMessage(lang, msgKey, { count, blockAt })
       };
     }
 
