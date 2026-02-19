@@ -1,11 +1,11 @@
 /**
  * claude-prism — hook tests
- * commit-guard + test-tracker
+ * commit-guard + test-tracker + plan-enforcement
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { writeState, readState } from '../lib/state.mjs';
@@ -187,3 +187,105 @@ describe('test-tracker', () => {
   });
 });
 
+// ─── plan-enforcement ───
+
+describe('plan-enforcement', () => {
+  let stateDir;
+  let projectDir;
+
+  beforeEach(() => {
+    stateDir = mkdtempSync(join(tmpdir(), 'prism-hook-'));
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-proj-'));
+  });
+
+  afterEach(() => {
+    rmSync(stateDir, { recursive: true, force: true });
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('passes for non-edit actions', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const result = planEnforcement.evaluate(
+      { action: 'command', command: 'npm test' },
+      { warnAt: 6, sourceExtensions: ['ts'], testPatterns: ['test'] },
+      stateDir
+    );
+    assert.equal(result.type, 'pass');
+  });
+
+  it('passes for non-source files', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const result = planEnforcement.evaluate(
+      { action: 'edit', filePath: 'README.md' },
+      { warnAt: 6, sourceExtensions: ['ts'], testPatterns: ['test'] },
+      stateDir
+    );
+    assert.equal(result.type, 'pass');
+  });
+
+  it('passes for test files', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const result = planEnforcement.evaluate(
+      { action: 'edit', filePath: 'src/app.test.ts' },
+      { warnAt: 6, sourceExtensions: ['ts'], testPatterns: ['test'] },
+      stateDir
+    );
+    assert.equal(result.type, 'pass');
+  });
+
+  it('passes when under threshold', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const config = { warnAt: 6, sourceExtensions: ['ts'], testPatterns: ['test'] };
+
+    for (let i = 0; i < 5; i++) {
+      const result = planEnforcement.evaluate(
+        { action: 'edit', filePath: `src/file${i}.ts` },
+        config, stateDir
+      );
+      assert.equal(result.type, 'pass');
+    }
+  });
+
+  it('warns when threshold reached without plan', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const config = { warnAt: 3, sourceExtensions: ['ts'], testPatterns: ['test'], projectRoot: projectDir };
+
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir);
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/b.ts' }, config, stateDir);
+    const result = planEnforcement.evaluate(
+      { action: 'edit', filePath: 'src/c.ts' }, config, stateDir
+    );
+    assert.equal(result.type, 'warn');
+    assert.ok(result.message.includes('3'));
+  });
+
+  it('passes when plan file exists despite reaching threshold', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    // Create a plan file
+    mkdirSync(join(projectDir, 'docs', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, 'docs', 'plans', '2026-01-01-feature.md'), '# Plan');
+
+    const config = { warnAt: 3, sourceExtensions: ['ts'], testPatterns: ['test'], projectRoot: projectDir };
+
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir);
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/b.ts' }, config, stateDir);
+    const result = planEnforcement.evaluate(
+      { action: 'edit', filePath: 'src/c.ts' }, config, stateDir
+    );
+    assert.equal(result.type, 'pass');
+  });
+
+  it('does not double-count same file', async () => {
+    const { planEnforcement } = await import('../hooks/plan-enforcement.mjs');
+    const config = { warnAt: 3, sourceExtensions: ['ts'], testPatterns: ['test'] };
+
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir);
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir); // same
+    planEnforcement.evaluate({ action: 'edit', filePath: 'src/b.ts' }, config, stateDir);
+    // Only 2 unique files, should pass
+    assert.equal(
+      planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir).type,
+      'pass'
+    );
+  });
+});

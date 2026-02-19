@@ -10,6 +10,16 @@
             "timeout": 5000
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/pre-tool.mjs",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "PostToolUse": [
