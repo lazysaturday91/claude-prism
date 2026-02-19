@@ -1,12 +1,11 @@
 ```
-                        /\
-           ━━━━━━━━━▶  /  \  ──── A  Assess
-           complex    /    \ ──── U  Understand
-           problem   / PRISM\──── D  Decompose
-                    /  ______\─── E  Execute
-                   /  /       ─── C  Checkpoint
-                  /__/         ── H  Handoff
-                                    spectrum
+                         ╱╲
+            ━━━━━━━━━▶  ╱  ╲  ── A  Assess
+            complex    ╱    ╲ ── U  Understand
+            problem   ╱ PRISM╲── D  Decompose
+                     ╱        ╲─ E  Execute
+                    ╱__________╲ C  Checkpoint
+                                 H  Handoff
 ```
 
 [![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
