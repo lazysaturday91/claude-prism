@@ -1,9 +1,11 @@
 ```
-                        ╱╲
-           ━━━━━━━━━▶  ╱  ╲  ──── U  Understand
-           complex    ╱    ╲ ──── D  Decompose
-           problem   ╱ PRISM╲──── E  Execute
-                    ╱________╲─── C  Checkpoint
+                        /\
+           ━━━━━━━━━▶  /  \  ──── A  Assess
+           complex    /    \ ──── U  Understand
+           problem   / PRISM\──── D  Decompose
+                    /  ______\─── E  Execute
+                   /  /       ─── C  Checkpoint
+                  /__/         ── H  Handoff
                                     spectrum
 ```
 
@@ -11,503 +13,168 @@
 [![license](https://img.shields.io/npm/l/claude-prism)](https://github.com/lazysaturday91/claude-prism/blob/main/LICENSE)
 [![node](https://img.shields.io/node/v/claude-prism)](https://nodejs.org)
 
-> `ai-coding` · `problem-decomposition` · `claude-code-hooks` · `claude-code-plugin` · `udec` · `scope-guard`
+> `ai-coding` · `methodology` · `udec` · `claude-code`
 
 # claude-prism
 
-An AI coding problem decomposition tool for Claude Code. Installs the **UDEC** methodology — Understand, Decompose, Execute, Checkpoint — directly into your project's Claude Code environment.
+**UDEC methodology framework for AI coding agents.**
 
-**The biggest failure mode of AI coding isn't bad code — it's building the wrong thing.** AI agents skip understanding, skip decomposition, and run autonomously for 30 minutes only to produce something nobody wanted. Prism fixes this by injecting discipline into how Claude thinks.
-
-**Core philosophy:** Never implement what you haven't understood. Never execute what you haven't decomposed.
-
-### What's New in v0.4.0
-
-- **Task size tags** — Every task gets `[S]`, `[M]`, or `[L]` with adaptive batch composition (S+S+M = 1 batch, L = solo)
-- **Verification strategy per task** — `| Verify: TDD`, `| Verify: Build`, or `| Verify: Visual` in plan templates
-- **Pre-decomposition checklist** — Mandatory type/schema/dependency check before creating plans
-- **Progress dashboard** — Visual progress bar with phase/batch/task percentages at each checkpoint
-- **Adaptive checkpoints** — After 3 consecutive approvals, batch size expands to 5-8 for the rest of the phase
-- **Scope guard disk fallback** — Detects existing `docs/plans/*.md` on disk, not just in-session writes (fixes false "without a plan" warnings across sessions)
-- **20 test runner patterns** — Added bun, pnpm, yarn, deno, rspec, dotnet, mvn, gradle detection
-- **9 framework-specific result detectors** — Accurate pass/fail for node, jest, vitest, pytest, go, cargo, mocha, rspec, dotnet
-- **Unified hook pipeline** — Single process per hook event instead of separate processes per rule (reduced I/O)
-- **Session event logging** — JSONL-based per-session event recording
-- **Alignment detection** — Scope drift tracking and major decision flagging
-- **Custom rules** — User-defined hook rules via config
+Installs the UDEC methodology — Assess, Understand, Decompose, Execute, Checkpoint, Handoff — directly into your project's Claude Code environment. Three lightweight hooks enforce the methodology where it matters most.
 
 ## The Problem
 
-Without structure, Claude does this:
+AI coding agents fail in predictable ways:
 
-| Without Prism | With Prism |
-|---|---|
-| Reads request → assumes understanding | Reads request → assesses sufficiency |
-| Starts coding immediately | Asks 1-2 clarifying questions first |
-| Builds one 30-minute mega-feature | Decomposes into 2-5 minute verifiable units |
-| Runs autonomously (no checkpoints) | Adaptive batches (1-8 tasks by complexity) → checkpoint → ask permission |
-| Produces working code that's wrong | Produces code that's correct *and* wanted |
+| Failure Mode | What Happens | UDEC Fix |
+|---|---|---|
+| Skip understanding | Builds the wrong thing for 30 minutes | ASSESS + UNDERSTAND phases |
+| No decomposition | One massive change that's hard to review | DECOMPOSE into verifiable batches |
+| No verification | "should work" without evidence | Risk-based verification strategy |
+| Scope creep | "While I'm here..." changes nobody asked for | Scope Guard in methodology |
+| Context loss | New session = start from scratch | HANDOFF protocol |
+
+**The biggest failure mode of AI coding isn't bad code — it's building the wrong thing.**
+
+## Core Philosophy
+
+> Never implement what you haven't understood. Never execute what you haven't decomposed.
+
+## What Prism Provides
+
+### 1. UDEC v2 Methodology (the core product)
+
+Injected into `CLAUDE.md`, UDEC is a behavioral framework that corrects how AI agents approach tasks:
+
+```
+ASSESS ─── Classify: bugfix / feature / migration / refactor / investigation
+  │
+UNDERSTAND ── Assess sufficiency → ask 1 question at a time → align
+  │
+DECOMPOSE ── Break into batches → plan file for 6+ files → size tags [S][M][L]
+  │
+EXECUTE ── Adaptive batches → risk-based verification → scope guard
+  │
+CHECKPOINT ── Report with evidence → preview next batch → get approval
+  │
+HANDOFF ── Session transition doc → next steps → decisions made
+```
+
+**Task-type aware**: Each task type (bugfix, feature, migration, refactor, investigation) follows a different optimal path. Migrations skip per-file decomposition. Bugfixes skip straight to locate-fix-verify. Investigations skip decomposition entirely.
+
+**Risk-based verification**: Verification matches the risk of the change, not the file path:
+- **High risk** (business logic, auth, state machines): TDD required
+- **Medium risk** (new components, API integration): Build + runtime check
+- **Low risk** (imports, types, renaming): Build/lint passes
+
+### 2. Three Focused Hooks
+
+Hooks enforce the methodology at critical points. All three are deterministic (no heuristics, no state accumulation issues):
+
+| Hook | What It Does | Trigger |
+|---|---|---|
+| **commit-guard** | Blocks commits when tests failed or haven't run | `git commit` |
+| **test-tracker** | Records test pass/fail results | Test commands (20 patterns) |
+| **plan-enforcement** | Warns when editing 6+ files without a plan | `Edit` / `Write` |
+
+**Why only three?** Previous versions had 6 hooks (scope-guard, debug-loop, alignment, turn-reporter). They produced false positives that undermined the methodology they were supposed to enforce. These three survive because they're deterministic: file count + plan existence, test result parsing, commit detection. No ambiguity.
+
+### 3. Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/claude-prism:prism` | Run full UDEC cycle |
+| `/claude-prism:checkpoint` | Check batch progress |
+| `/claude-prism:plan` | List/create/view plan files |
+| `/claude-prism:doctor` | Diagnose installation health |
+| `/claude-prism:stats` | Version, hooks, plan count |
+| `/claude-prism:update` | Update to latest version |
+| `/claude-prism:help` | Command reference |
 
 ## Installation
 
 ```bash
 npx claude-prism init              # Install with hooks
-npx claude-prism init --no-hooks   # Rules only, no hooks
-npx claude-prism init --global     # Install as global skill (available in all projects)
-npx claude-prism update            # Update rules and commands to latest
-npx claude-prism update --global   # Update global skill too
-prism check                        # Verify installation
+npx claude-prism init --no-hooks   # Methodology only, no hooks
+npx claude-prism init --global     # Global skill (all projects)
+npx claude-prism init --dry-run    # Preview what would be installed
 ```
 
 ### What Gets Installed
 
-After running `prism init`, your project gains:
-
-**UDEC Rules** — Injected into `CLAUDE.md` between `PRISM:START` and `PRISM:END` markers. Explains the four-phase methodology:
-- **U** — Assess information sufficiency before acting. Ask one question at a time, multiple choice, max 3 rounds.
-- **D** — Decompose complex problems into 2-5 minute units with TDD. Create a plan file for 6+ file changes.
-- **E** — Execute in adaptive batches. Apply context-aware verification by file path (TDD / build / lint-only).
-- **C** — Checkpoint after each batch. Report progress, show next batch preview, get confirmation before continuing.
-
-**Slash Commands** — Added to `.claude/commands/claude-prism/`:
-- `/claude-prism:prism` — Full UDEC workflow (understand → decompose → execute → checkpoint). Also handles analysis-only requests.
-- `/claude-prism:checkpoint` — Check batch progress, show next batch preview
-- `/claude-prism:plan` — List, create, or view plan files
-- `/claude-prism:doctor` — Diagnose installation health via Claude
-- `/claude-prism:stats` — Show project statistics, hook status, and plan progress
-- `/claude-prism:update` — Update rules and commands to latest version
-- `/claude-prism:help` — Command reference
-
-**Hooks** (optional, unless `--no-hooks` is set) — Six CLI guards that enforce discipline:
-- `commit-guard` — Prevents commits when tests haven't run recently
-- `debug-loop` — Detects divergent editing patterns on the same file (catches infinite debugging loops)
-- `test-tracker` — Detects test execution (20 patterns, 9 framework-specific result detectors) and records pass/fail
-- `scope-guard` — Warns at 4 unique files modified, blocks at 7 (agent-aware, plan-aware with disk fallback)
-- `alignment` — Detects scope drift (new directories outside base scope) and major decisions (package installs, db migrations, destructive deletes)
-- `turn-reporter` — Tracks turn count, warns at 5 autonomous turns without user input, provides previous turn summary
-
-**Configuration** — `.claude-prism.json` stores hook settings. Includes OMC (oh-my-claudecode) detection.
-
-## File Structure After Installation
-
 ```
 your-project/
-├── CLAUDE.md                 # (modified) UDEC rules injected
-├── .claude-prism.json       # claude-prism config
+├── CLAUDE.md                    # UDEC methodology injected
+├── .claude-prism.json           # Hook configuration
 ├── .claude/
-│   ├── commands/
-│   │   └── claude-prism/        # Namespaced commands
-│   │       ├── prism.md         # /claude-prism:prism
-│   │       ├── checkpoint.md    # /claude-prism:checkpoint
-│   │       ├── plan.md          # /claude-prism:plan
-│   │       ├── doctor.md        # /claude-prism:doctor
-│   │       ├── stats.md         # /claude-prism:stats
-│   │       ├── update.md        # /claude-prism:update
-│   │       └── help.md          # /claude-prism:help
-│   ├── hooks/               # (optional, if --no-hooks not set)
-│   │   ├── pre-tool.mjs     # Unified PreToolUse runner
-│   │   ├── post-tool.mjs    # Unified PostToolUse runner
-│   │   └── user-prompt.mjs  # UserPromptSubmit runner
-│   ├── rules/               # Hook logic modules
-│   │   ├── commit-guard.mjs
-│   │   ├── debug-loop.mjs
-│   │   ├── test-tracker.mjs
-│   │   ├── scope-guard.mjs
-│   │   ├── alignment.mjs
-│   │   └── turn-reporter.mjs
-│   ├── lib/                 # Hook dependencies
-│   │   ├── adapter.mjs
-│   │   ├── pipeline.mjs
-│   │   ├── state.mjs
-│   │   ├── session.mjs
-│   │   ├── config.mjs
-│   │   ├── messages.mjs
-│   │   └── utils.mjs
-│   └── settings.json        # Claude Code hook registration
-└── docs/plans/
-    └── YYYY-MM-DD-topic.md  # Plan files (created during /claude-prism:prism execution)
+│   ├── commands/claude-prism/   # 7 slash commands
+│   ├── hooks/                   # pre-tool.mjs, post-tool.mjs
+│   ├── rules/                   # commit-guard, test-tracker, plan-enforcement
+│   ├── lib/                     # Shared dependencies
+│   └── settings.json            # Hook registration
+└── docs/plans/                  # Plan files (created during work)
 ```
-
-## The UDEC Cycle
-
-```
-        START
-          |
-          v
-    [ UNDERSTAND ]  ← Assess sufficiency, ask clarifying questions
-          |
-          v
-    [ DECOMPOSE ]   ← Break into 2-5 min units, create plan file
-          |
-          v
-    [ EXECUTE ]     ← Run adaptive batch, verify each unit
-          |
-          v
-    [ CHECKPOINT ]  ← Report, show next batch, ask to continue
-          |
-       [LOOP or STOP]
-```
-
-## Commands
-
-### Command Reference
-
-| Command | When to Use | Purpose |
-|---------|-------------|---------|
-| `/claude-prism:prism` | Any task (code or analysis) | Run full UDEC cycle; stops at U phase for analysis-only requests |
-| `/claude-prism:plan` | Manage plan files | List, create, or view plans |
-| `/claude-prism:checkpoint` | Mid-project | Check batch progress, preview next batch |
-| `/claude-prism:doctor` | Installation issues | Diagnose health, suggest fixes |
-| `/claude-prism:stats` | Check current state | Version, hooks, plan progress |
-| `/claude-prism:update` | After `npm update` | Update rules and commands to latest |
-| `/claude-prism:help` | Forgot commands | Quick reference |
-
-### Workflow
-
-```
-User request arrives
-       │
-       ▼
-  Vague? ──Yes──▶ /claude-prism:prism  (U phase clarifies, then proceeds or stops)
-       │
-       No
-       ▼
-  Complex? ──Yes──▶ /claude-prism:prism     (full UDEC cycle)
-       │
-       No
-       ▼
-  Just execute
-       │
-       ▼
-  Mid-check ──────▶ /claude-prism:checkpoint (between batches)
-       │
-       ▼
-  Plan mgmt ──────▶ /claude-prism:plan       (list/create)
-```
-
-### Use Case Patterns
-
-**Pattern 1: Feature Implementation**
-```
-/claude-prism:prism → "Add login functionality"
-                    → Claude asks: "JWT or sessions?" "OAuth needed?"
-                    → Plan created: docs/plans/2026-02-16-auth.md
-                    → Batch 1 executes (3 tasks)
-/claude-prism:checkpoint  → "Batch 1 done. Continue to batch 2?"
-```
-
-**Pattern 2: Clarify a Vague Request**
-```
-/claude-prism:prism → "Improve performance"
-                    → Claude: [Insufficient] "What kind?"
-                      1. Build time (next build)
-                      2. Runtime (page load/render)
-                      3. Bundle size (recommended)
-                    → Agreement reached → proceeds to D/E/C or stops if analysis-only
-                         → /claude-prism:prism to start execution
-```
-
-**Pattern 3: Resume Previous Work**
-```
-/claude-prism:plan        → List existing plans, show progress
-/claude-prism:checkpoint  → "Plan X: 5/12 tasks done. Batch 3 next."
-                          → "Continue" → Resume execution
-```
-
-**Pattern 4: Quick Troubleshooting**
-```
-/claude-prism:doctor → Check installation health
-/claude-prism:stats  → Verify hooks, OMC status
-```
-
-### Before & After
-
-**Before (AI agent's default behavior)**
-1. User: "Refactor auth module"
-2. AI: (no thinking) 30 minutes autonomous execution
-3. Result: Completed structure nobody wanted
-
-**After (Prism applied)**
-1. User: "Refactor auth module"
-2. Claude (automatic questions):
-   - "Goal: Keep existing API and only improve internal structure? (Yes/No)"
-   - "Scope: Authentication/authorization both? Or authentication only?"
-   - "Tests: Keep existing tests as-is?"
-3. User confirms → decomposition starts
-4. Result: Completed as intended
-
-## Hooks
-
-Hooks are optional CLI guards that enforce discipline during development. Install with `prism init`, skip with `--no-hooks`.
-
-### commit-guard
-
-Blocks commits if tests haven't been run in the last 5 minutes (configurable via `maxTestAge` in `.claude-prism.json`). Works with `test-tracker` to know when tests last ran.
-
-```json
-{
-  "hooks": {
-    "commit-guard": {
-      "enabled": true,
-      "maxTestAge": 300
-    }
-  }
-}
-```
-
-**Behavior:**
-- Detects test run via `test-tracker`
-- Blocks commit if: (current time - last test run) > maxTestAge
-- Prevents shipping untested code
-
-### debug-loop
-
-Detects editing patterns on the same file. Distinguishes between **divergent** edits (same code area repeatedly — likely thrashing) and **convergent** edits (different areas like imports, logic, JSX — normal progressive work).
-
-```json
-{
-  "hooks": {
-    "debug-loop": {
-      "enabled": true,
-      "warnAt": 3,
-      "blockAt": 5
-    }
-  }
-}
-```
-
-**Behavior:**
-- Tracks edit patterns using snippet analysis
-- **Divergent pattern** (same area): warns at 3 edits, blocks at 5
-- **Convergent pattern** (different areas): passes silently, downgrades block to warn
-- Catches infinite debugging loops while allowing normal multi-area edits
-
-### test-tracker
-
-Detects test command execution and records the timestamp and pass/fail state. Used by `commit-guard` to verify tests ran recently.
-
-**Detects (20 patterns):**
-- `npm test`, `pnpm test`, `yarn test`, `bun test`
-- `jest`, `vitest`, `mocha`, `rspec`
-- `node --test`, `deno test`
-- `npx jest`, `npx vitest`, `npx mocha`, `bunx vitest`
-- `pytest`, `cargo test`, `go test`
-- `dotnet test`, `mvn test`, `gradle test`
-- `make test`
-
-**Framework-specific result detection (9 detectors):**
-- Node test runner, Jest, Vitest, Pytest, Go, Cargo, Mocha, RSpec, dotnet
-- Analyzes both stdout and stderr for accurate pass/fail determination
-
-**Configuration:**
-```json
-{
-  "hooks": {
-    "test-tracker": {
-      "enabled": true
-    }
-  }
-}
-```
-
-**Behavior:**
-- Runs on every Bash command
-- If command matches test pattern, records timestamp
-- Records result (pass/fail based on exit code)
-- `commit-guard` reads this state to allow/block commits
-
-### scope-guard
-
-Tracks unique source files modified per session. Warns when scope grows without a plan (catches scope creep). Agent-aware: sub-agents get higher thresholds.
-
-```json
-{
-  "hooks": {
-    "scope-guard": {
-      "enabled": true,
-      "warnAt": 4,
-      "blockAt": 7,
-      "agentWarnAt": 8,
-      "agentBlockAt": 12
-    }
-  }
-}
-```
-
-**Behavior:**
-- Tracks unique source files (`.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.go`, `.rs`, `.java`, `.c`, `.cpp`, `.h`, `.svelte`, `.vue`)
-- Excludes test files (`.test.`, `.spec.`, `_test.`)
-- Standard thresholds: warns at 4 files, blocks at 7
-- Agent thresholds (when OMC sub-agents running): warns at 8, blocks at 12
-- Warning: "Consider running /claude-prism:prism to decompose the task"
-- Block: "Run /claude-prism:prism to decompose before continuing"
-- **Plan-aware**: When a plan file is created (`docs/plans/*.md`), thresholds are automatically doubled
-  - Standard with plan: warns at 8, blocks at 14
-  - Agent with plan: warns at 16, blocks at 24
-- **Cross-session persistence**: Detects existing plan files on disk (`docs/plans/*.md`), not just plans created in the current session. Fixes false "without a plan" warnings when resuming work in a new session.
 
 ## Configuration
 
-Edit `.claude-prism.json` to customize behavior:
+Edit `.claude-prism.json`:
 
 ```json
 {
   "hooks": {
     "commit-guard": { "enabled": true, "maxTestAge": 300 },
-    "debug-loop": { "enabled": true, "warnAt": 3, "blockAt": 5 },
     "test-tracker": { "enabled": true },
-    "scope-guard": { "enabled": true, "warnAt": 4, "blockAt": 7, "agentWarnAt": 8, "agentBlockAt": 12 }
+    "plan-enforcement": { "enabled": true, "warnAt": 6 }
   }
 }
 ```
 
-**Settings:**
-- `hooks.*` — Enable/disable individual hooks or customize thresholds
-- `hooks.commit-guard.maxTestAge` — Seconds before test is considered stale (default: 300)
-- `hooks.debug-loop.warnAt/blockAt` — Edit counts that trigger warnings/blocks
-- `hooks.scope-guard.warnAt/blockAt` — File counts for standard mode
-- `hooks.scope-guard.agentWarnAt/agentBlockAt` — File counts for OMC agent mode
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `commit-guard.maxTestAge` | 300 | Seconds before test run is considered stale |
+| `plan-enforcement.warnAt` | 6 | Unique source file count that triggers plan warning |
 
 ## CLI Commands
 
-### prism check
-
-Verify installation after `prism init`:
-
 ```bash
-prism check
+prism init [--no-hooks] [--global] [--dry-run]   # Install
+prism check [--ci]                                 # Verify installation
+prism doctor                                       # Diagnose issues
+prism stats                                        # Installation summary
+prism reset                                        # Clear hook state
+prism update [--global]                            # Update to latest
+prism uninstall [--global]                         # Remove
 ```
 
-Output:
-```
-  Commands:  ✅
-  Rules:     ✅
-  Hooks:     ✅
-  Config:    ✅
+## Before & After
 
-  Status:    ✅ All good
-```
+**Before** (AI agent default behavior):
+1. User: "Refactor auth module"
+2. AI: 30 minutes autonomous execution, no questions asked
+3. Result: Structure nobody wanted, untested, scope creep everywhere
 
-For CI integration, use `--ci` flag for JSON output:
+**After** (with UDEC):
+1. User: "Refactor auth module"
+2. AI classifies as **Refactor** type, assesses information as **[Partial]**
+3. Asks: "Keep existing API surface? Or allowed to change public interface?"
+4. Decomposes into 3 batches with size tags, creates plan file
+5. Executes batch 1 → checkpoints with evidence → continues on approval
+6. Result: Exactly what was asked, verified, documented
 
-```bash
-prism check --ci
-```
+## OMC Integration
 
-### prism doctor
-
-Diagnose installation issues with actionable fix suggestions. Also detects oh-my-claudecode (OMC) presence.
-
-```bash
-prism doctor
-```
-
-Output:
-```
-  ✅ Installation is healthy. No issues found.
-
-  OMC:       ✅ v4.1.1
-```
-
-If issues are found:
-```
-  Issues found:
-
-  ❌ CLAUDE.md rules not found
-  ❌ /claude-prism:prism command not installed
-
-  Suggested fixes:
-
-  💡 Run: npx claude-prism init
-  💡 Check: .claude/commands/claude-prism/prism.md exists
-```
-
-### prism stats
-
-Show installation summary including version, hook status, plan file count, and OMC detection:
-
-```bash
-prism stats
-```
-
-Output:
-```
-  Version:   v0.4.0
-  Plans:     2 file(s)
-  OMC:       ✅ v4.1.1
-  Hooks:
-    ✅ commit-guard
-    ✅ debug-loop
-    ✅ test-tracker
-    ✅ scope-guard
-```
-
-### prism reset
-
-Clear all hook state (edit counters, test timestamps, scope tracking). Use when starting a fresh task or after major refactor:
-
-```bash
-prism reset
-```
-
-Output:
-```
-  ✅ Hook state cleared (edit counters, test timestamps)
-
-  🌈 Fresh start. All hooks reset.
-```
-
-## Uninstall
-
-```bash
-npx claude-prism uninstall
-```
-
-This removes CLAUDE.md rules, slash commands, and hooks.
-
-## OMC (oh-my-claudecode) Integration
-
-Prism auto-detects if [oh-my-claudecode](https://github.com/raidenppl/oh-my-claudecode) is installed in your environment. When OMC is present:
-
-- **Higher scope thresholds for agents** — Sub-agents get `agentWarnAt: 8, agentBlockAt: 12` instead of standard `warnAt: 4, blockAt: 7`
-- **Visible in status commands** — `prism stats` and `prism doctor` show OMC detection with version
-- **No configuration needed** — Detection happens automatically
-
-Check OMC status:
-
-```bash
-prism stats       # Shows "OMC: ✅ v4.1.1" or "OMC: ⏭️ not detected"
-prism doctor      # Shows OMC detection in diagnostics
-```
-
-This allows OMC agents (executor, architect, etc.) to modify more files per task without triggering scope warnings, recognizing that coordinated multi-agent work has different constraints than single-agent development.
-
-## Verification Strategy
-
-Prism uses context-aware verification — the right level of rigor for each file type:
-
-| Path Pattern | Strategy | Escalation |
-|---|---|---|
-| `lib/`, `utils/`, `store/`, `hooks/`, `services/` | **TDD required** — failing test → implement → verify | Always TDD |
-| `components/`, `pages/`, `views/` | **Build verification** — build passes + visual check | Escalate to TDD if complex logic |
-| `config/`, `styles/`, `types/`, `*.json` | **Build/lint only** | Never |
-
-**Core rules (all paths):**
-1. Never claim completion without fresh verification evidence
-2. Never commit code that doesn't build
-3. TDD paths: write failing test → minimal code → verify
-4. Build paths: run build/lint → confirm no regressions
+Prism auto-detects [oh-my-claudecode](https://github.com/raidenppl/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
 
 ## Design Philosophy
 
-Prism is built on the insight that **AI needs structure more than humans do.** Humans naturally ask clarifying questions and break problems down. AI doesn't — it optimizes for speed. Prism enforces the discipline that makes AI-assisted coding reliable:
+UDEC is the product. Everything else serves it.
 
-- Explicit understanding phase (no assumptions)
-- Enforced decomposition (no mega-tasks)
-- Batched execution with checkpoints (human in the loop)
-- Context-aware verification (TDD, build, or lint — matched to file type)
+The methodology works because it targets the specific failure modes of AI agents — not human developers. Humans naturally ask questions and break things down. AI optimizes for speed and skips these steps. UDEC forces the discipline that makes AI-assisted coding reliable.
 
-The prism metaphor: white light (complex problem) enters from one side and decomposes into a spectrum of colors (manageable units). Each color (unit) is individually verified, then recombined into a working whole.
+The hooks exist to enforce the two most critical rules:
+1. **Don't commit untested code** (commit-guard + test-tracker)
+2. **Don't edit many files without a plan** (plan-enforcement)
+
+Everything else is handled by the methodology itself, living in CLAUDE.md where the AI reads and follows it.
 
 ## License
 
