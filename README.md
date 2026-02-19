@@ -1,11 +1,9 @@
 ```
                          ╱╲
-            ━━━━━━━━━▶  ╱  ╲  ── A  Assess
-            complex    ╱    ╲ ── U  Understand
-            problem   ╱ PRISM╲── D  Decompose
-                     ╱        ╲─ E  Execute
-                    ╱__________╲ C  Checkpoint
-                                 H  Handoff
+            ━━━━━━━━━▶  ╱  ╲  ── U  Understand
+            complex    ╱    ╲ ── D  Decompose
+            problem   ╱ PRISM╲── E  Execute
+                     ╱________╲─ C  Checkpoint
 ```
 
 [![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
@@ -18,7 +16,7 @@
 
 **UDEC methodology framework for AI coding agents.**
 
-Installs the UDEC methodology — Assess, Understand, Decompose, Execute, Checkpoint, Handoff — directly into your project's Claude Code environment. Three lightweight hooks enforce the methodology where it matters most.
+Installs the UDEC methodology — **Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes an entry protocol (Assess) and session transition protocol (Handoff) that bookend the core cycle. Three lightweight hooks enforce the methodology where it matters most.
 
 ## The Problem
 
@@ -26,7 +24,7 @@ AI coding agents fail in predictable ways:
 
 | Failure Mode | What Happens | UDEC Fix |
 |---|---|---|
-| Skip understanding | Builds the wrong thing for 30 minutes | ASSESS + UNDERSTAND phases |
+| Skip understanding | Builds the wrong thing for 30 minutes | UNDERSTAND phase |
 | No decomposition | One massive change that's hard to review | DECOMPOSE into verifiable batches |
 | No verification | "should work" without evidence | Risk-based verification strategy |
 | Scope creep | "While I'm here..." changes nobody asked for | Scope Guard in methodology |
@@ -45,17 +43,23 @@ AI coding agents fail in predictable ways:
 Injected into `CLAUDE.md`, UDEC is a behavioral framework that corrects how AI agents approach tasks:
 
 ```
-ASSESS ─── Classify: bugfix / feature / migration / refactor / investigation
-  │
-UNDERSTAND ── Assess sufficiency → ask 1 question at a time → align
-  │
-DECOMPOSE ── Break into batches → plan file for 6+ files → size tags [S][M][L]
-  │
-EXECUTE ── Adaptive batches → risk-based verification → scope guard
-  │
-CHECKPOINT ── Report with evidence → preview next batch → get approval
-  │
-HANDOFF ── Session transition doc → next steps → decisions made
+  ASSESS ─── Classify: bugfix / feature / migration / refactor / investigation
+    │                                          (entry protocol)
+    ▼
+┌─────────────────── UDEC Core Cycle ───────────────────┐
+│ UNDERSTAND ── Sufficiency assessment → ask → align     │
+│   │                                                    │
+│ DECOMPOSE ── Batches → plan file for 6+ files → [S][M][L] │
+│   │                                                    │
+│ EXECUTE ── Adaptive batches → risk-based verification  │
+│   │                                                    │
+│ CHECKPOINT ── Report with evidence → get approval ─────┤
+│              (loops back for next batch)                │
+└────────────────────────────────────────────────────────┘
+    │
+    ▼
+  HANDOFF ── Session transition doc → next steps
+                                           (exit protocol)
 ```
 
 **Task-type aware**: Each task type (bugfix, feature, migration, refactor, investigation) follows a different optimal path. Migrations skip per-file decomposition. Bugfixes skip straight to locate-fix-verify. Investigations skip decomposition entirely.

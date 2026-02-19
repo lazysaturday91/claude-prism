@@ -1,6 +1,9 @@
 
 <!-- PRISM:START -->
-# Prism v2 — AI Coding Problem Decomposition Framework (UDEC)
+# Prism — UDEC Methodology Framework
+
+**UDEC = Understand, Decompose, Execute, Checkpoint** — the core cycle.
+Bookended by ASSESS (entry protocol) and HANDOFF (exit protocol).
 
 ## Core Principle
 
@@ -8,7 +11,7 @@
 
 ---
 
-## 1. ASSESS — Task Type Identification
+## Entry: ASSESS — Task Type Classification
 
 Before any work, classify the task. Each type follows a different optimal path.
 
@@ -24,7 +27,7 @@ Before any work, classify the task. Each type follows a different optimal path.
 
 ---
 
-## 2. UNDERSTAND — Understanding Protocol
+## UDEC 1. UNDERSTAND — Understanding Protocol
 
 ### 2-1. Information Sufficiency Assessment (MANDATORY)
 
@@ -70,7 +73,7 @@ Before moving to DECOMPOSE:
 
 ---
 
-## 3. DECOMPOSE — Planning Protocol
+## UDEC 2. DECOMPOSE — Planning Protocol
 
 ### 3-1. Decomposition Trigger
 
@@ -130,7 +133,7 @@ Before creating the plan:
 
 ---
 
-## 4. EXECUTE — Execution Protocol
+## UDEC 3. EXECUTE — Execution Protocol
 
 ### 4-1. Batch Execution
 
@@ -203,7 +206,7 @@ When delegating work to sub-agents:
 
 ---
 
-## 5. CHECKPOINT — Confirmation Protocol
+## UDEC 4. CHECKPOINT — Confirmation Protocol
 
 ### 5-1. Batch Checkpoint
 
@@ -231,7 +234,7 @@ User says "stop here" → clean exit
 
 ---
 
-## 6. HANDOFF — Session Transition Protocol
+## Exit: HANDOFF — Session Transition Protocol
 
 ### 6-1. When to Handoff
 
