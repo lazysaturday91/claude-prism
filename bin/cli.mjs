@@ -163,8 +163,12 @@ switch (command) {
     }
 
     console.log('🌈 claude-prism update\n');
-    await update(cwd);
-    console.log('✅ UDEC methodology updated');
+    const result = await update(cwd);
+    if (result?.sourceRepo) {
+      console.log('✅ UDEC methodology updated (from local templates)');
+    } else {
+      console.log('✅ UDEC methodology updated');
+    }
     console.log('✅ Commands updated');
     console.log('✅ Commit guard updated');
     console.log('\n🌈 Prism updated to latest.');
