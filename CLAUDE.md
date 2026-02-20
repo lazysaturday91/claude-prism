@@ -109,13 +109,24 @@ One sentence: what we're building and why.
 ## Architecture
 Tech stack, key decisions, 2-3 sentences max.
 
+## Related Plans
+- Depends on: `YYYY-MM-DD-<prior-plan>.md` (status: complete/in-progress)
+- Shared files: list files that overlap with other active plans
+- (Omit this section if no other plans exist)
+
+## Codebase Audit
+- Audit date: YYYY-MM-DD
+- Targets remaining: N files (verified by grep/search)
+- Already completed: N items (by prior work or other branches)
+- Evidence: `grep -r "pattern" --include="*.ext" | wc -l` → N
+
 ## Files in Scope
 - `path/to/file1.ts` — [what changes]
 - `path/to/file2.ts` — [what changes]
 
 ## Batch 1: [Name]
-- [ ] Task 1.1: [S] [description] | Verify: [method]
-- [ ] Task 1.2: [M] [description] | Verify: [method]
+- [ ] Task 1.1: [S] [description] | Verify: [auto: build/test/lint]
+- [ ] Task 1.2: [M] [description] | Verify: [auto: test] [manual: visual check]
   - Prerequisite: Task 1.1
 
 ## Risks / Open Questions
@@ -125,9 +136,13 @@ Tech stack, key decisions, 2-3 sentences max.
 ### 3-4. Pre-Decomposition Check
 
 Before creating the plan:
+- [ ] **Codebase audit**: grep/search to verify targets actually exist in code (don't trust assumptions from prior sessions)
+- [ ] **Cross-plan check**: if other plans exist in `docs/plans/`, identify overlapping files and note dependencies
 - [ ] Required types/interfaces have the necessary fields?
 - [ ] External package APIs behave as expected?
 - [ ] Cross-package dependencies identified?
+
+**Staleness prevention**: If plan targets (files to change, patterns to replace) no longer exist in the codebase, mark them as "already completed" before starting execution. Never start a plan without verifying its targets are real.
 
 ---
 
@@ -147,17 +162,22 @@ Before creating the plan:
 
 Choose verification proportional to the **risk of the change**, not the file path:
 
-| Risk Level | When | Verification |
-|------------|------|-------------|
-| **High** | Business logic, data mutation, auth, state machines, calculations | TDD required: failing test → implement → pass |
-| **Medium** | New components with logic, API integration, config that affects behavior | Build + runtime check (dev server, API call, etc.) |
-| **Low** | Imports, types, style/layout, renaming, mechanical migration | Build/lint passes |
+| Risk Level | When | Auto Verification | Manual (recommend only) |
+|------------|------|-------------------|----------------------|
+| **High** | Business logic, data mutation, auth, state machines, calculations | TDD: failing test → implement → pass | — |
+| **Medium** | New components with logic, API integration, config that affects behavior | Build + lint pass | Visual/runtime spot-check |
+| **Low** | Imports, types, style/layout, renaming, mechanical migration | Build/lint passes | — |
+
+**Auto vs Manual separation:**
+- **Auto** (required): build, test, lint — must pass before claiming completion
+- **Manual** (recommended, not required): visual checks, browser testing, UX review — note as "manual check recommended" in plan, don't list as a gate
 
 **Core Rules:**
-1. Never claim completion without fresh verification evidence
+1. Never claim completion without fresh **auto** verification evidence
 2. Never commit code that doesn't build
 3. For high-risk: write failing test first → minimal code to pass → verify
 4. For medium/low: run build/lint after changes → confirm no regressions
+5. Never list manual verification as a pass criterion — it won't be enforced consistently
 
 ### 4-3. Systematic Debugging (Bugfix path)
 
@@ -211,8 +231,16 @@ When delegating work to sub-agents:
 After each batch:
 - Report what was completed
 - Report verification results (with evidence)
+- **Freshness check**: verify remaining plan targets still exist in codebase (quick grep)
+- Update plan file: mark completed tasks `[x]`, note any targets already done
 - Preview next batch
 - "Continue?"
+
+**Plan-Reality sync** (run at every checkpoint):
+1. Grep for plan's change targets (patterns, files, functions to modify)
+2. If target no longer exists → mark task as "already completed (prior work)"
+3. If new targets discovered → add to plan's "Risks / Open Questions"
+4. Update plan file's `Codebase Audit` section with fresh counts
 
 **Checkpoint frequency:**
 - **Phase boundary**: always stop (mandatory)
@@ -223,6 +251,7 @@ After each batch:
 ```
 Phase: [phase] | Batch: [N/M] | Tasks: [done/total] ([%])
 [████████░░] 80% — Next: [next batch name]
+Plan freshness: verified [date] | Remaining targets: [N] confirmed in code
 ```
 
 ### 5-2. Direction Change
@@ -286,6 +315,8 @@ If any of these excuses come to mind, **that's a warning signal**. Stop and retu
 | "This is close enough" | Close ≠ correct. Verify precisely |
 | "It worked in my head" | Run the test. Thought experiments don't count |
 | "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
+| "The plan says 0% so we start fresh" | Grep the codebase. Prior work may already exist |
+| "Other plans won't conflict" | Check `docs/plans/` for overlapping files |
 
 ## 8. Completion Declaration Rules
 
