@@ -3,8 +3,12 @@
 When this command is invoked:
 
 1. **Read the plan file** from `docs/plans/` (most recent matching file)
-2. **Check completed tasks** (marked with [x] in the plan)
-3. **Report current status** using this standard format:
+2. **Auto-count progress** by running:
+   - `grep -c '\- \[x\]' <plan-file>` → completed count
+   - `grep -c '\- \[ \]' <plan-file>` → remaining count
+   - Calculate percentage: completed / (completed + remaining)
+3. **Freshness check**: grep for plan's change targets to verify they still exist in codebase
+4. **Report current status** using this standard format:
 
    ### Changes
 

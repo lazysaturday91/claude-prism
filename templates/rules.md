@@ -45,7 +45,16 @@ Before acting on any request, assess first:
 4. **Maximum 3 rounds** — Round 1: direction (what) / Round 2: constraints (how) / Round 3: scope
 5. **Explore first** — check package.json, existing structure before asking
 
-### 2-3. Alignment Confirmation
+### 2-3. Environment Validation
+
+Before any implementation, verify:
+- Project builds from current state (no pre-existing failures)
+- Declared dependencies match lock file versions
+- Environment-specific config identified (env vars, local services, deploy targets)
+
+If any of these fail → resolve first. Do not implement on a broken baseline.
+
+### 2-4. Alignment Confirmation
 
 Before moving to DECOMPOSE:
 - Goal summarized in one sentence
@@ -80,9 +89,9 @@ Before moving to DECOMPOSE:
 | Task Type | Trigger | Action |
 |-----------|---------|--------|
 | **Bugfix** | — | Skip decomposition. Go straight to locate → fix → verify. |
-| **Feature** | 3+ files affected | Decompose into batches. Plan file if 6+ files. |
+| **Feature** | 3+ files affected (advisory: 2+ in tightly-coupled legacy, 5+ in well-tested modular) | Decompose into batches. Plan file if 6+ files or 3+ modules. |
 | **Migration** | — | Define pattern + file list. No per-file decomposition. |
-| **Refactor** | 3+ files affected | Decompose into batches. Plan file if 6+ files. |
+| **Refactor** | 3+ files affected (same advisory as Feature) | Decompose into batches. Plan file if 6+ files or 3+ modules. |
 | **Investigation** | — | Skip decomposition. Define exploration scope. |
 
 ### 3-2. Decomposition Principles (Feature/Refactor only)
@@ -97,7 +106,10 @@ Before moving to DECOMPOSE:
 - **[M]** Medium: 30-100 LOC, feature implementation, component creation
 - **[L]** Large: >100 LOC, multi-file rewrite, new module/architecture
 
-**Batch composition**: S+S+M = 1 batch, L = 1 batch alone, S+S+S+S = 1 batch
+**Batch composition**:
+- Mixed: S+S+M = 1 batch, L = 1 batch alone
+- **[S]-only: up to 8 per batch** (independent small changes can be batched aggressively)
+- Aligns with 4-1 adaptive batch size (simple/mechanical: 5-10 per batch)
 
 ### 3-3. Plan File Persistence
 
@@ -111,13 +123,24 @@ One sentence: what we're building and why.
 ## Architecture
 Tech stack, key decisions, 2-3 sentences max.
 
+## Related Plans
+- Depends on: `YYYY-MM-DD-<prior-plan>.md` (status: complete/in-progress)
+- Shared files: list files that overlap with other active plans
+- (Omit this section if no other plans exist)
+
+## Codebase Audit
+- Audit date: YYYY-MM-DD
+- Targets remaining: N files (verified by grep/search)
+- Already completed: N items (by prior work or other branches)
+- Evidence: `grep -r "pattern" --include="*.ext" | wc -l` → N
+
 ## Files in Scope
 - `path/to/file1.ts` — [what changes]
 - `path/to/file2.ts` — [what changes]
 
 ## Batch 1: [Name]
-- [ ] Task 1.1: [S] [description] | Verify: [method]
-- [ ] Task 1.2: [M] [description] | Verify: [method]
+- [ ] Task 1.1: [S] [description] | Verify: [auto: build/test/lint]
+- [ ] Task 1.2: [M] [description] | Verify: [auto: test] [manual: visual check]
   - Prerequisite: Task 1.1
 
 ## Risks / Open Questions
@@ -127,9 +150,23 @@ Tech stack, key decisions, 2-3 sentences max.
 ### 3-4. Pre-Decomposition Check
 
 Before creating the plan:
+- [ ] **Codebase audit**: grep/search to verify targets actually exist in code (don't trust assumptions from prior sessions)
+- [ ] **Cross-plan check**: if other plans exist in `docs/plans/`, identify overlapping files and note dependencies
 - [ ] Required types/interfaces have the necessary fields?
 - [ ] External package APIs behave as expected?
 - [ ] Cross-package dependencies identified?
+
+**Staleness prevention**: If plan targets (files to change, patterns to replace) no longer exist in the codebase, mark them as "already completed" before starting execution. Never start a plan without verifying its targets are real.
+
+### 3-5. Quality Gate: DECOMPOSE → EXECUTE
+
+Before starting execution, all must pass:
+- [ ] Plan file exists and targets verified against codebase
+- [ ] Project builds from current state (no pre-existing failures)
+- [ ] Dependencies resolved (lock file matches, no missing packages)
+- [ ] Environment validated (required env vars, services, configs present)
+
+If any gate fails → resolve before executing. Do not start implementation on a broken baseline.
 
 ---
 
@@ -141,25 +178,48 @@ Before creating the plan:
    - Simple/mechanical changes (imports, types, config, migration): 5-10 per batch
    - Standard changes (feature add/modify): 3-4 per batch
    - Complex changes (new module, architecture): 1-2 per batch
-2. **Checkpoint**: report results after each batch + wait for user feedback
-3. **Report content**: what was done / verification results / next batch preview
-4. **On blockers**: stop immediately and report (do not guess)
+2. **Git-as-Memory**: commit after each completed batch as a rollback point. Use `git diff` summaries to maintain context in long sessions.
+3. **Checkpoint**: report results after each batch + wait for user feedback
+4. **Report content**: what was done / verification results / next batch preview
+5. **On blockers**: stop immediately and report (do not guess)
 
 ### 4-2. Verification Strategy (Risk-Based)
 
 Choose verification proportional to the **risk of the change**, not the file path:
 
-| Risk Level | When | Verification |
-|------------|------|-------------|
-| **High** | Business logic, data mutation, auth, state machines, calculations | TDD required: failing test → implement → pass |
-| **Medium** | New components with logic, API integration, config that affects behavior | Build + runtime check (dev server, API call, etc.) |
-| **Low** | Imports, types, style/layout, renaming, mechanical migration | Build/lint passes |
+| Risk Level | When | Auto Verification | Manual (recommend only) |
+|------------|------|-------------------|----------------------|
+| **High** | Business logic, data mutation, auth, state machines, calculations | TDD: failing test → implement → pass | — |
+| **Medium** | New components with logic, API integration, config that affects behavior | Build + lint pass | Visual/runtime spot-check |
+| **Low** | Imports, types, style/layout, renaming, mechanical migration | Build/lint passes | — |
+| **No test infra** | No test framework, no CI/CD, manual deploy (legacy PHP, WordPress, etc.) | Grep-based static check + syntax validation | Browser/manual verification |
+
+**Auto vs Manual separation:**
+- **Auto** (required): build, test, lint — must pass before claiming completion
+- **Manual** (recommended, not required): visual checks, browser testing, UX review — note as "manual check recommended" in plan, don't list as a gate
+
+**Verifiability modifier**: Some changes are hard to verify automatically (UI layout, business rule nuances, security boundaries). For hard-to-verify + high-risk changes, require **human approval before commit** regardless of test results.
+
+**Verification Fallback Ladder** (use highest available level):
+
+| Level | Method | Tools Required |
+|-------|--------|---------------|
+| 1. Automated Tests | TDD / unit / integration | Test runner |
+| 2. Approval Testing | Capture output before, diff after | diff, shell |
+| 3. Build Verification | Compiles without errors | Build tool |
+| 4. Lint/Static Analysis | No new warnings | Linter |
+| 5. Smoke Check | App starts, key routes respond | curl, browser |
+| 6. Manual Diff Review | `git diff` reviewed for regressions | git |
+
+**Every change must have SOME verification.** If no tooling exists, `git diff` review is the minimum.
 
 **Core Rules:**
-1. Never claim completion without fresh verification evidence
+1. Never claim completion without fresh **auto** verification evidence
 2. Never commit code that doesn't build
 3. For high-risk: write failing test first → minimal code to pass → verify
-4. For medium/low: run build/lint after changes → confirm no regressions
+4. For high-risk: write at least one **negative test** (what should this code NOT do? what input should it reject?)
+5. For medium/low: run build/lint after changes → confirm no regressions
+6. Never list manual verification as a pass criterion — it won't be enforced consistently
 
 ### 4-3. Systematic Debugging (Bugfix path)
 
@@ -181,6 +241,16 @@ Choose verification proportional to the **risk of the change**, not the file pat
 - 5 turns autonomous → "Report progress before continuing"
 - Adding workarounds to fix workarounds → "Design problem. Step back."
 - Copy-pasting similar code 3+ times → "Need abstraction? Ask user."
+- Dependency version mismatch detected → "Resolve before continuing."
+
+**Goal Recitation** (prevents drift in long sessions):
+- At every batch boundary, re-read the plan file and confirm: "Current work aligns with: [original goal]"
+- If current work does not serve the original goal → STOP, report drift, return to plan
+
+**Thrashing Detector** (beyond simple edit counting):
+- Successive edits reverting previous changes (oscillation) → "Reverting own work. Wrong approach."
+- Scope of changes expanding beyond plan → "Scope creep. Return to DECOMPOSE."
+- Error messages changing type across fixes → "Chasing symptoms, not root cause. Back to UNDERSTAND."
 
 ### 4-5. Scope Guard
 
@@ -197,24 +267,52 @@ Choose verification proportional to the **risk of the change**, not the file pat
 
 When delegating work to sub-agents:
 
-1. **Clear instructions**: specify expected output, files to modify, pass criteria
-2. **Read actual files** after agent completes — never trust the agent's report alone
-3. **Run build/test** to verify the agent's changes work
-4. **Fix or retry** if incomplete
+1. **Clear instructions**: specify inputs, expected outputs, invariants, and pass criteria
+2. **Resource ownership**: each file/module has exactly one agent writing at a time — define non-overlapping scopes upfront
+3. **Read actual files** after agent completes — never trust the agent's report alone
+4. **Run build/test** to verify the agent's changes work
+5. **Fix or retry** if incomplete
 
 **Never mark a delegated task as complete without reading the actual file state.**
+
+### 4-7. Project-Type Verification Examples
+
+| Project Type | Syntax Check | Smoke Test | Approval Test |
+|-------------|-------------|------------|---------------|
+| **PHP/WordPress** | `php -l file.php` | `curl` key pages, `wp-cli` commands | Capture page output before/after, diff |
+| **Static Sites** | Build completes | Link checker, visual diff of HTML | Compare output directory before/after |
+| **Scripts/CLI** | Language syntax check | Run with known inputs, compare outputs | Capture stdout before/after |
+| **Infra/Config** | `terraform plan`, `docker build` | Dry-run deploy | Compare plan output before/after |
 
 ---
 
 ## UDEC 4. CHECKPOINT — Confirmation Protocol
+
+### Quality Gate: EXECUTE → CHECKPOINT
+
+Before reporting completion of a phase:
+- [ ] All batch tasks reach terminal state (done or explicitly skipped with reason)
+- [ ] Build passes with zero new errors
+- [ ] No uncommitted changes left unstaged
+- [ ] Plan file updated with current `[x]` status
+
+If any gate fails → continue in EXECUTE, do not report completion.
 
 ### 5-1. Batch Checkpoint
 
 After each batch:
 - Report what was completed
 - Report verification results (with evidence)
+- **Freshness check**: verify remaining plan targets still exist in codebase (quick grep)
+- Update plan file: mark completed tasks `[x]`, note any targets already done
 - Preview next batch
 - "Continue?"
+
+**Plan-Reality sync** (run at every checkpoint):
+1. Grep for plan's change targets (patterns, files, functions to modify)
+2. If target no longer exists → mark task as "already completed (prior work)"
+3. If new targets discovered → add to plan's "Risks / Open Questions"
+4. Update plan file's `Codebase Audit` section with fresh counts
 
 **Checkpoint frequency:**
 - **Phase boundary**: always stop (mandatory)
@@ -225,6 +323,7 @@ After each batch:
 ```
 Phase: [phase] | Batch: [N/M] | Tasks: [done/total] ([%])
 [████████░░] 80% — Next: [next batch name]
+Plan freshness: verified [date] | Remaining targets: [N] confirmed in code
 ```
 
 ### 5-2. Direction Change
@@ -263,12 +362,36 @@ Create `docs/HANDOFF.md` with:
 [Anything broken or incomplete]
 ```
 
-### 6-3. Resuming from Handoff
+### 6-3. Project Memory (persistent across all sessions)
 
-When a session starts and `docs/HANDOFF.md` exists:
-1. Read it first
-2. Verify the described state matches reality (git status, file contents)
-3. Continue from "Next Steps"
+Maintain `docs/PROJECT-MEMORY.md` — cumulative knowledge that survives session transitions:
+
+```markdown
+## Architectural Decisions
+- [date] [decision] — [rationale]
+
+## Conventions
+- [naming, patterns, file structure rules discovered/established]
+
+## Environment Gotchas
+- [quirks, workarounds, version constraints and why]
+
+## Package Constraints
+- [package@version — why pinned, what breaks if upgraded]
+```
+
+**Rules:**
+- HANDOFF.md is session-scoped (overwritten each session transition)
+- PROJECT-MEMORY.md is permanent (append-only, never overwrite)
+- On session start: read PROJECT-MEMORY.md first, then HANDOFF.md if it exists
+
+### 6-4. Resuming from Handoff
+
+When a session starts:
+1. Read `docs/PROJECT-MEMORY.md` if it exists (persistent context)
+2. Read `docs/HANDOFF.md` if it exists (session context)
+3. Verify the described state matches reality (git status, file contents)
+4. Continue from "Next Steps"
 
 ---
 
@@ -288,6 +411,10 @@ If any of these excuses come to mind, **that's a warning signal**. Stop and retu
 | "This is close enough" | Close ≠ correct. Verify precisely |
 | "It worked in my head" | Run the test. Thought experiments don't count |
 | "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
+| "The plan says 0% so we start fresh" | Grep the codebase. Prior work may already exist |
+| "Other plans won't conflict" | Check `docs/plans/` for overlapping files |
+| "Tests pass, so it must be correct" | Passing tests only prove what you tested. Check edge cases and negative cases |
+| "3 files is too few to decompose" | Depends on coupling. 2 files in a tightly-coupled legacy system may need decomposition |
 
 ## 8. Completion Declaration Rules
 
