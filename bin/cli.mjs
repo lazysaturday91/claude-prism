@@ -175,6 +175,69 @@ switch (command) {
     break;
   }
 
+  case 'analytics': {
+    const { listSessions, getSessionSummary } = await import('../lib/session.mjs');
+    console.log('🌈 claude-prism analytics\n');
+
+    const sessions = listSessions();
+    if (sessions.length === 0) {
+      console.log('  No session data yet. Analytics will populate as hooks run.');
+      break;
+    }
+
+    let totalBlocks = 0;
+    let totalWarnings = 0;
+    let totalTestsRun = 0;
+    let totalTestsPassed = 0;
+    let totalTestsFailed = 0;
+    let totalFilesModified = 0;
+    let totalFilesCreated = 0;
+    let totalTurns = 0;
+    let sessionCount = 0;
+
+    for (const sid of sessions) {
+      const summary = getSessionSummary(sid);
+      if (!summary) continue;
+      sessionCount++;
+      totalBlocks += summary.blocks;
+      totalWarnings += summary.warnings;
+      totalTestsRun += summary.testsRun;
+      totalTestsPassed += summary.testsPassed;
+      totalTestsFailed += summary.testsFailed;
+      totalFilesModified += summary.filesModified;
+      totalFilesCreated += summary.filesCreated;
+      totalTurns += summary.turns;
+    }
+
+    console.log(`  Sessions:        ${sessionCount}`);
+    console.log(`  Total events:    ${totalTurns + totalBlocks + totalWarnings + totalTestsRun + totalFilesModified + totalFilesCreated}`);
+    console.log('');
+    console.log('  Hook Effectiveness:');
+    console.log(`    Blocks:        ${totalBlocks}`);
+    console.log(`    Warnings:      ${totalWarnings}`);
+    console.log('');
+    console.log('  Test Activity:');
+    console.log(`    Runs:          ${totalTestsRun}`);
+    console.log(`    Passed:        ${totalTestsPassed}`);
+    console.log(`    Failed:        ${totalTestsFailed}`);
+    console.log('');
+    console.log('  File Activity:');
+    console.log(`    Modified:      ${totalFilesModified}`);
+    console.log(`    Created:       ${totalFilesCreated}`);
+
+    if (hasFlag('detail')) {
+      console.log('\n  Recent Sessions:\n');
+      const recent = sessions.slice(-5);
+      for (const sid of recent) {
+        const s = getSessionSummary(sid);
+        if (!s) continue;
+        const date = new Date(s.startedAt).toISOString().slice(0, 19).replace('T', ' ');
+        console.log(`    ${date} | events: ${s.totalEvents} | blocks: ${s.blocks} | warns: ${s.warnings} | tests: ${s.testsRun}`);
+      }
+    }
+    break;
+  }
+
   default: {
     console.log(`🌈 claude-prism — UDEC methodology framework for AI coding agents
 
@@ -185,6 +248,7 @@ Usage:
   prism doctor                           Diagnose issues with fix suggestions
   prism stats                            Show installation summary
   prism reset                            Clear hook state
+  prism analytics [--detail]             Show usage analytics
   prism update                           Re-install using current config
   prism update --global                  Update global commands + OMC skill
   prism uninstall                        Remove prism from current project

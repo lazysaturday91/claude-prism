@@ -62,7 +62,7 @@ Before moving to DECOMPOSE:
 - MVP scope defined
 - User confirmed "proceed"
 
-### 2-4. Assumption Detection (Red Flag Checklist)
+### 2-5. Assumption Detection (Red Flag Checklist)
 
 **If you think you understand fully on first read, you probably don't.**
 
@@ -109,7 +109,7 @@ Before moving to DECOMPOSE:
 **Batch composition**:
 - Mixed: S+S+M = 1 batch, L = 1 batch alone
 - **[S]-only: up to 8 per batch** (independent small changes can be batched aggressively)
-- Aligns with 4-1 adaptive batch size (simple/mechanical: 5-10 per batch)
+- Aligns with 4-1 adaptive batch size (simple/mechanical: 5-8 per batch)
 
 ### 3-3. Plan File Persistence
 
@@ -175,7 +175,7 @@ If any gate fails → resolve before executing. Do not start implementation on a
 ### 4-1. Batch Execution
 
 1. **Adaptive batch size**:
-   - Simple/mechanical changes (imports, types, config, migration): 5-10 per batch
+   - Simple/mechanical changes (imports, types, config, migration): 5-8 per batch
    - Standard changes (feature add/modify): 3-4 per batch
    - Complex changes (new module, architecture): 1-2 per batch
 2. **Git-as-Memory**: commit after each completed batch as a rollback point. Use `git diff` summaries to maintain context in long sessions.

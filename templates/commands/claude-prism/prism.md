@@ -54,23 +54,23 @@ When this command is invoked, follow the UDEC framework strictly:
 
 ## E — EXECUTE
 
-11. Execute in adaptive batches:
+14. Execute in adaptive batches:
     - Simple changes (imports, types, config): 5-8 per batch
     - Standard changes (feature add/modify): 3-4 per batch
     - Complex changes (new module, architecture): 1-2 per batch
-12. Apply context-aware verification:
+15. Apply context-aware verification:
     - `lib/`, `utils/`, `store/`, `hooks/`, `services/` → TDD (failing test → implement → verify)
     - `components/`, `pages/`, `views/` → Build verification (escalate to TDD if complex logic)
     - `config/`, `styles/`, `types/` → Build/lint only
-13. **Scope Guard**: Before each change, ask: "Was this requested?" If no → don't do it
-14. **Self-correction triggers**:
+16. **Scope Guard**: Before each change, ask: "Was this requested?" If no → don't do it
+17. **Self-correction triggers**:
     - Same file edited 3+ times **on the same region/logic** → stop, investigate root cause (progressive edits across different regions — imports, logic, JSX — are normal)
     - File not in plan → pause, ask about scope change
     - 3 consecutive test failures → stop, reconsider approach
     - New package needed → ask user first
     - Adding workarounds on workarounds → design problem, step back
-15. **Verification scoping**: When running build checks (tsc, lint, etc.), filter output to only changed files. Pre-existing errors in other files are not your concern. Example: `tsc --noEmit 2>&1 | grep -i "<changed-file>"`
-16. **Agent failure recovery**: If a delegated agent partially fails or produces incomplete results:
+18. **Verification scoping**: When running build checks (tsc, lint, etc.), filter output to only changed files. Pre-existing errors in other files are not your concern. Example: `tsc --noEmit 2>&1 | grep -i "<changed-file>"`
+19. **Agent failure recovery**: If a delegated agent partially fails or produces incomplete results:
     1. Verify actual file state (read the file, not just the agent's report)
     2. If partially correct → complete the remaining work directly
     3. If fully wrong → retry with clearer instructions or execute directly
@@ -100,4 +100,4 @@ If oh-my-claudecode is detected in this environment:
 - Use `architect` agent for complex decomposition decisions
 - Use `executor` agents for parallel batch execution when tasks are independent
 - Use `verifier` agent for checkpoint verification
-- Scope Guard thresholds are automatically raised for sub-agents (8 warn / 12 block vs 4/7)
+- Scope Guard thresholds are automatically raised for sub-agents (8 warn / 12 block vs default 4 warn / 7 block for standalone mode)

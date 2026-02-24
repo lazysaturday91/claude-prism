@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "0.8.1",
+  "version": "1.0.0",
   "description": "UDEC methodology framework for AI coding agents — Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {

@@ -31,11 +31,11 @@ describe('cli init', () => {
     assert.ok(existsSync(join(projectDir, '.claude', 'commands', 'claude-prism', 'checkpoint.md')));
   });
 
-  it('creates all 7 namespaced command files after init', async () => {
+  it('creates all 8 namespaced command files after init', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: true });
     const nsDir = join(projectDir, '.claude', 'commands', 'claude-prism');
-    const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md', 'update.md'];
+    const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md', 'update.md', 'analytics.md'];
     for (const cmd of expected) {
       assert.ok(existsSync(join(nsDir, cmd)), `Expected ${cmd} to exist`);
     }
@@ -447,13 +447,13 @@ describe('cli doctor', () => {
     assert.ok(result.fixes.some(f => f.includes('migrate')));
   });
 
-  it('reports all 7 missing commands when namespace dir absent', async () => {
+  it('reports all 8 missing commands when namespace dir absent', async () => {
     const { doctor } = await import('../lib/installer.mjs');
     rmSync(join(projectDir, '.claude', 'commands', 'claude-prism'), { recursive: true });
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
     const missingCmds = result.issues.filter(i => i.includes('Missing command:'));
-    assert.equal(missingCmds.length, 7);
+    assert.equal(missingCmds.length, 8);
   });
 
   it('detects legacy .prism.json and suggests migration', async () => {
@@ -537,5 +537,130 @@ describe('cli reset', () => {
     const { reset } = await import('../lib/installer.mjs');
     const cleared = reset();
     assert.ok(cleared);
+  });
+});
+
+// ─── initGlobal ───
+
+describe('cli initGlobal', () => {
+  let fakeHome;
+  beforeEach(() => { fakeHome = mkdtempSync(join(tmpdir(), 'prism-home-')); });
+  afterEach(() => { rmSync(fakeHome, { recursive: true, force: true }); });
+
+  it('installs 8 commands to ~/.claude/commands/claude-prism/', async () => {
+    const { initGlobal } = await import('../lib/installer.mjs');
+    initGlobal({ homeDir: fakeHome });
+    const cmdsDir = join(fakeHome, '.claude', 'commands', 'claude-prism');
+    const expected = ['prism.md', 'checkpoint.md', 'plan.md', 'doctor.md', 'stats.md', 'help.md', 'update.md', 'analytics.md'];
+    for (const cmd of expected) {
+      assert.ok(existsSync(join(cmdsDir, cmd)), `Expected ${cmd}`);
+    }
+  });
+
+  it('installs SKILL.md to ~/.claude/skills/prism/', async () => {
+    const { initGlobal } = await import('../lib/installer.mjs');
+    initGlobal({ homeDir: fakeHome });
+    assert.ok(existsSync(join(fakeHome, '.claude', 'skills', 'prism', 'SKILL.md')));
+  });
+});
+
+// ─── uninstallGlobal ───
+
+describe('cli uninstallGlobal', () => {
+  let fakeHome;
+  beforeEach(async () => {
+    fakeHome = mkdtempSync(join(tmpdir(), 'prism-home-'));
+    const { initGlobal } = await import('../lib/installer.mjs');
+    initGlobal({ homeDir: fakeHome });
+  });
+  afterEach(() => { rmSync(fakeHome, { recursive: true, force: true }); });
+
+  it('removes commands and skills directories', async () => {
+    const { uninstallGlobal } = await import('../lib/installer.mjs');
+    uninstallGlobal({ homeDir: fakeHome });
+    assert.ok(!existsSync(join(fakeHome, '.claude', 'commands', 'claude-prism')));
+    assert.ok(!existsSync(join(fakeHome, '.claude', 'skills', 'prism')));
+  });
+
+  it('handles already-removed directories gracefully', async () => {
+    const { uninstallGlobal } = await import('../lib/installer.mjs');
+    uninstallGlobal({ homeDir: fakeHome });
+    // Call again — should not throw
+    uninstallGlobal({ homeDir: fakeHome });
+  });
+});
+
+// ─── dryRun ───
+
+describe('cli dryRun', () => {
+  let projectDir;
+  beforeEach(() => { projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-')); });
+  afterEach(() => { rmSync(projectDir, { recursive: true, force: true }); });
+
+  it('lists all files that would be created on fresh project', async () => {
+    const { dryRun } = await import('../lib/installer.mjs');
+    const result = dryRun(projectDir, { hooks: true });
+    assert.ok(result.actions.length > 0);
+    // All should be "create" on fresh project
+    assert.ok(result.actions.every(a => a.status === 'create'));
+    // Should include commands, hooks, rules, libs, CLAUDE.md, config
+    assert.ok(result.actions.some(a => a.type === 'command'));
+    assert.ok(result.actions.some(a => a.type === 'hook'));
+    assert.ok(result.actions.some(a => a.type === 'rule'));
+    assert.ok(result.actions.some(a => a.type === 'lib'));
+    assert.ok(result.actions.some(a => a.type === 'rules'));
+    assert.ok(result.actions.some(a => a.type === 'config'));
+  });
+
+  it('shows "update" status for existing files', async () => {
+    const { init, dryRun } = await import('../lib/installer.mjs');
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
+    await init(projectDir, { hooks: true });
+    const result = dryRun(projectDir, { hooks: true });
+    // Most should be "update" now (config won't appear since it exists)
+    assert.ok(result.actions.some(a => a.status === 'update'));
+    assert.ok(!result.actions.some(a => a.type === 'config')); // config already exists, not listed
+  });
+
+  it('excludes hooks when hooks option is false', async () => {
+    const { dryRun } = await import('../lib/installer.mjs');
+    const result = dryRun(projectDir, { hooks: false });
+    assert.ok(!result.actions.some(a => a.type === 'hook'));
+    assert.ok(!result.actions.some(a => a.type === 'rule'));
+    assert.ok(!result.actions.some(a => a.type === 'lib'));
+    // Commands and CLAUDE.md should still be listed
+    assert.ok(result.actions.some(a => a.type === 'command'));
+    assert.ok(result.actions.some(a => a.type === 'rules'));
+  });
+});
+
+// ─── self-update detection ───
+
+describe('cli self-update detection', () => {
+  let projectDir;
+  beforeEach(() => { projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-')); });
+  afterEach(() => { rmSync(projectDir, { recursive: true, force: true }); });
+
+  it('detects source repo and uses local templates', async () => {
+    const { update } = await import('../lib/installer.mjs');
+    // Simulate a claude-prism source repo
+    writeFileSync(join(projectDir, 'package.json'), JSON.stringify({ name: 'claude-prism' }));
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Test\n<!-- PRISM:START -->old<!-- PRISM:END -->\n');
+    mkdirSync(join(projectDir, 'templates'), { recursive: true });
+    writeFileSync(join(projectDir, 'templates', 'rules.md'), '<!-- PRISM:START -->\n# Local Rules\n<!-- PRISM:END -->');
+    const result = await update(projectDir);
+    assert.ok(result?.sourceRepo);
+    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
+    assert.ok(content.includes('Local Rules'));
+    assert.ok(!content.includes('old'));
+  });
+
+  it('proceeds normally for non-source-repo projects', async () => {
+    const { init, update } = await import('../lib/installer.mjs');
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
+    writeFileSync(join(projectDir, 'package.json'), JSON.stringify({ name: 'my-app' }));
+    await init(projectDir, { hooks: true });
+    const result = await update(projectDir);
+    assert.ok(!result?.sourceRepo);
   });
 });
