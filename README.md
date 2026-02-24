@@ -9,6 +9,7 @@
 [![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
 [![license](https://img.shields.io/npm/l/claude-prism)](https://github.com/lazysaturday91/claude-prism/blob/main/LICENSE)
 [![node](https://img.shields.io/node/v/claude-prism)](https://nodejs.org)
+[![CI](https://github.com/lazysaturday91/claude-prism/actions/workflows/ci.yml/badge.svg)](https://github.com/lazysaturday91/claude-prism/actions/workflows/ci.yml)
 
 > `ai-coding` · `methodology` · `udec` · `claude-code`
 
@@ -26,9 +27,9 @@ AI coding agents fail in predictable ways:
 |---|---|---|
 | Skip understanding | Builds the wrong thing for 30 minutes | UNDERSTAND phase |
 | No decomposition | One massive change that's hard to review | DECOMPOSE into verifiable batches |
-| No verification | "should work" without evidence | Risk-based verification strategy |
-| Scope creep | "While I'm here..." changes nobody asked for | Scope Guard in methodology |
-| Context loss | New session = start from scratch | HANDOFF protocol |
+| No verification | "should work" without evidence | Risk-based verification + Fallback Ladder |
+| Scope creep | "While I'm here..." changes nobody asked for | Scope Guard + Thrashing Detector |
+| Context loss | New session = start from scratch | HANDOFF + Project Memory |
 
 **The biggest failure mode of AI coding isn't bad code — it's building the wrong thing.**
 
@@ -38,7 +39,7 @@ AI coding agents fail in predictable ways:
 
 ## What Prism Provides
 
-### 1. UDEC v2 Methodology (the core product)
+### 1. UDEC v3 Methodology (the core product)
 
 Injected into `CLAUDE.md`, UDEC is a behavioral framework that corrects how AI agents approach tasks:
 
@@ -48,26 +49,30 @@ Injected into `CLAUDE.md`, UDEC is a behavioral framework that corrects how AI a
     ▼
 ┌─────────────────── UDEC Core Cycle ───────────────────┐
 │ UNDERSTAND ── Sufficiency assessment → ask → align     │
-│   │                                                    │
-│ DECOMPOSE ── Batches → plan file for 6+ files → [S][M][L] │
-│   │                                                    │
+│   │          Environment validation                    │
+│ DECOMPOSE ── Batches → plan file → quality gate        │
+│   │          Codebase audit → cross-plan check         │
 │ EXECUTE ── Adaptive batches → risk-based verification  │
-│   │                                                    │
-│ CHECKPOINT ── Report with evidence → get approval ─────┤
+│   │        Goal recitation → thrashing detection       │
+│ CHECKPOINT ── Report with evidence → plan-reality sync │
 │              (loops back for next batch)                │
 └────────────────────────────────────────────────────────┘
     │
     ▼
-  HANDOFF ── Session transition doc → next steps
+  HANDOFF ── Session transition doc + Project Memory
                                            (exit protocol)
 ```
 
 **Task-type aware**: Each task type (bugfix, feature, migration, refactor, investigation) follows a different optimal path. Migrations skip per-file decomposition. Bugfixes skip straight to locate-fix-verify. Investigations skip decomposition entirely.
 
-**Risk-based verification**: Verification matches the risk of the change, not the file path:
-- **High risk** (business logic, auth, state machines): TDD required
+**Risk-based verification** with Fallback Ladder:
+- **High risk** (business logic, auth, state machines): TDD required + negative tests
 - **Medium risk** (new components, API integration): Build + runtime check
 - **Low risk** (imports, types, renaming): Build/lint passes
+- **No test infra** (legacy PHP, WordPress): Grep-based static check + syntax validation
+- Fallback: Automated Tests → Approval Testing → Build → Lint → Smoke Check → Manual Diff
+
+**Quality gates** between phases prevent executing on broken baselines.
 
 ### 2. Three Focused Hooks
 
@@ -86,12 +91,22 @@ Hooks enforce the methodology at critical points. All three are deterministic (n
 | Command | Purpose |
 |---------|---------|
 | `/claude-prism:prism` | Run full UDEC cycle |
-| `/claude-prism:checkpoint` | Check batch progress |
+| `/claude-prism:checkpoint` | Check batch progress with plan-reality sync |
 | `/claude-prism:plan` | List/create/view plan files |
+| `/claude-prism:analytics` | Show usage analytics (blocks, warns, tests) |
 | `/claude-prism:doctor` | Diagnose installation health |
 | `/claude-prism:stats` | Version, hooks, plan count |
 | `/claude-prism:update` | Update to latest version |
 | `/claude-prism:help` | Command reference |
+
+### 4. Analytics
+
+Hook events (blocks, warnings) are automatically logged to session files. View aggregated statistics:
+
+```bash
+prism analytics             # Summary across all sessions
+prism analytics --detail    # Include per-session breakdown
+```
 
 ## Installation
 
@@ -109,7 +124,7 @@ your-project/
 ├── CLAUDE.md                    # UDEC methodology injected
 ├── .claude-prism.json           # Hook configuration
 ├── .claude/
-│   ├── commands/claude-prism/   # 7 slash commands
+│   ├── commands/claude-prism/   # 8 slash commands
 │   ├── hooks/                   # pre-tool.mjs, post-tool.mjs
 │   ├── rules/                   # commit-guard, test-tracker, plan-enforcement
 │   ├── lib/                     # Shared dependencies
@@ -123,6 +138,7 @@ Edit `.claude-prism.json`:
 
 ```json
 {
+  "version": 1,
   "hooks": {
     "commit-guard": { "enabled": true, "maxTestAge": 300 },
     "test-tracker": { "enabled": true },
@@ -133,6 +149,7 @@ Edit `.claude-prism.json`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| `version` | 1 | Config schema version (for future migrations) |
 | `commit-guard.maxTestAge` | 300 | Seconds before test run is considered stale |
 | `plan-enforcement.warnAt` | 6 | Unique source file count that triggers plan warning |
 
@@ -143,6 +160,7 @@ prism init [--no-hooks] [--global] [--dry-run]   # Install
 prism check [--ci]                                 # Verify installation
 prism doctor                                       # Diagnose issues
 prism stats                                        # Installation summary
+prism analytics [--detail]                         # Usage analytics
 prism reset                                        # Clear hook state
 prism update [--global]                            # Update to latest
 prism uninstall [--global]                         # Remove
