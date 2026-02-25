@@ -1,7 +1,7 @@
 /**
  * claude-prism — Plan Enforcement
  * Warns when editing many files without a plan file
- * Reinforces UDEC's DECOMPOSE phase
+ * Reinforces EUDEC's DECOMPOSE phase
  */
 
 import { readJsonState, writeJsonState } from '../lib/state.mjs';

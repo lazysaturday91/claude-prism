@@ -1,7 +1,7 @@
 {
   "name": "claude-prism",
   "version": "1.0.1",
-  "description": "UDEC methodology framework for AI coding agents — Understand, Decompose, Execute, Checkpoint.",
+  "description": "EUDEC methodology framework for AI coding agents — Essence, Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {
     "prism": "./bin/cli.mjs"
@@ -20,6 +20,7 @@
     "problem-decomposition",
     "claude-code-hooks",
     "udec",
+    "eudec",
     "ai-agent"
   ],
   "engines": {

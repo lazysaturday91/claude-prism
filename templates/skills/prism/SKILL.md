@@ -1,19 +1,20 @@
 ---
 name: prism
-description: AI coding problem decomposition tool — UDEC methodology
+description: AI coding problem decomposition tool — EUDEC methodology
 triggers:
   - "prism"
   - "decompose"
   - "udec"
+  - "eudec"
 argument-hint: "[task description]"
 ---
 
 <Purpose>
-Prism applies the UDEC methodology (Understand, Decompose, Execute, Checkpoint) to any coding task. It prevents the biggest AI coding failure mode: building the wrong thing by skipping understanding and decomposition.
+Prism applies the EUDEC methodology (Essence, Understand, Decompose, Execute, Checkpoint) to any coding task. It prevents the biggest AI coding failure mode: building the wrong thing by skipping essence extraction and understanding.
 </Purpose>
 
 <Use_When>
-- User says "prism", "decompose", or "udec"
+- User says "prism", "decompose", "udec", or "eudec"
 - Complex task requiring structured approach (3+ files, unclear scope)
 - Vague request that needs clarification before implementation
 - User wants disciplined, checkpoint-based execution
@@ -31,9 +32,30 @@ AI agents optimize for speed, not correctness. Without structure, they skip unde
 
 <Steps>
 
+## E — ESSENCE
+
+0. **Extract the essence**: Before exploring code, ask: "What is the core problem here — in one sentence, without naming specific tools?"
+   - Output: `본질: [one sentence — no technology/tool names]`
+   - Output: `최소 케이스: [simplest working version]`
+   - Output: `확장 경로: minimal → [step1] → [step2] → [complete]`
+1. **Verify essence quality**:
+   - Does the essence sentence avoid specific technology names? If not → still at solution level, go higher
+   - Is the minimal case truly minimal? Can it be reduced further?
+   - Symptom vs cause: "Is this the cause, or a consequence?"
+   - Solution vs essence: "Caching" is a solution. "Eliminating redundant computation" is the essence.
+2. **Derive task type** from the essence:
+
+   | Essence Character | Type | Path |
+   |-------------------|------|------|
+   | "X is broken" | Bugfix | UNDERSTAND → locate → fix → verify |
+   | "X should be possible" | Feature | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
+   | "All X must become Y" | Migration | UNDERSTAND → pattern → batch apply → verify |
+   | "X's structure must change" | Refactor | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
+   | "Why does X happen?" | Investigation | explore → analyze → report |
+
 ## U — UNDERSTAND
 
-1. **Explore first**: Read package.json, project structure, related files before asking anything
+3. **Explore first**: Read package.json, project structure, related files before asking anything
 2. **Assess information sufficiency**:
    - [Sufficient] Specific file, function, symptom mentioned → skip to DECOMPOSE
    - [Partial] Direction clear but details missing → explore then ask 1-2 questions

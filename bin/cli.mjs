@@ -60,7 +60,7 @@ switch (command) {
     console.log('🌈 claude-prism init\n');
     await init(cwd, { hooks });
 
-    console.log('✅ UDEC methodology → CLAUDE.md');
+    console.log('✅ EUDEC methodology → CLAUDE.md');
     console.log('✅ Commands → /prism, /checkpoint, /plan');
     if (hooks) {
       console.log('✅ Commit guard → blocks commits with failing tests');
@@ -165,9 +165,9 @@ switch (command) {
     console.log('🌈 claude-prism update\n');
     const result = await update(cwd);
     if (result?.sourceRepo) {
-      console.log('✅ UDEC methodology updated (from local templates)');
+      console.log('✅ EUDEC methodology updated (from local templates)');
     } else {
-      console.log('✅ UDEC methodology updated');
+      console.log('✅ EUDEC methodology updated');
     }
     console.log('✅ Commands updated');
     console.log('✅ Commit guard updated');
@@ -239,7 +239,7 @@ switch (command) {
   }
 
   default: {
-    console.log(`🌈 claude-prism — UDEC methodology framework for AI coding agents
+    console.log(`🌈 claude-prism — EUDEC methodology framework for AI coding agents
 
 Usage:
   prism init [--no-hooks]                Install prism in current project

@@ -4,7 +4,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `/claude-prism:prism` | Start full UDEC workflow (Understand → Decompose → Execute → Checkpoint). Also handles analysis-only requests — stops after U phase when no code change is needed. |
+| `/claude-prism:prism` | Start full EUDEC workflow (Essence → Understand → Decompose → Execute → Checkpoint). Also handles analysis-only requests — stops after U phase when no code change is needed. |
 | `/claude-prism:checkpoint` | Check current batch progress, show next batch preview |
 | `/claude-prism:plan` | List, create, or view plan files in `docs/plans/` |
 | `/claude-prism:doctor` | Diagnose installation health and suggest fixes |
@@ -31,9 +31,10 @@ prism update                           # Re-install / migrate
 prism uninstall                        # Remove prism
 ```
 
-## UDEC Framework
+## EUDEC Framework
 
 ```
+E — Essence: Extract core problem, simplify to minimal case, define expansion path
 U — Understand: Assess sufficiency, ask questions, confirm alignment
      (analysis-only requests stop here with findings report)
 D — Decompose: Break into 2-5 min units, create plan file

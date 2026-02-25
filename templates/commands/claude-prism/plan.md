@@ -18,7 +18,7 @@ If user requests a new plan:
 
 1. **Determine topic** from user's description
 2. **Create file** at `docs/plans/YYYY-MM-DD-<topic>.md`
-3. **Use UDEC template**:
+3. **Use EUDEC template**:
 
 ```
 ## Goal

@@ -60,7 +60,7 @@ describe('cli init', () => {
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(content.includes('<!-- PRISM:START -->'));
     assert.ok(content.includes('<!-- PRISM:END -->'));
-    assert.ok(content.includes('UDEC'));
+    assert.ok(content.includes('EUDEC'));
   });
 
   // ─── rules strengthening tests ───
@@ -314,7 +314,7 @@ describe('cli update', () => {
     await update(projectDir);
     const content = readFileSync(claudeMd, 'utf8');
     assert.ok(content.includes('# My Project'));
-    assert.ok(content.includes('UDEC'));
+    assert.ok(content.includes('EUDEC'));
     assert.ok(!content.includes('OLD'));
   });
 

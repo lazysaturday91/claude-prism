@@ -1,9 +1,10 @@
 ```
-                         ╱╲
-            ━━━━━━━━━▶  ╱  ╲  ── U  Understand
-            complex    ╱    ╲ ── D  Decompose
-            problem   ╱ PRISM╲── E  Execute
-                     ╱________╲─ C  Checkpoint
+                           ╱╲
+              ━━━━━━━━━▶  ╱  ╲  ── E  Essence
+              complex    ╱    ╲ ── U  Understand
+              problem   ╱ PRISM╲── D  Decompose
+                       ╱        ╲─ E  Execute
+                      ╱__________╲─ C  Checkpoint
 ```
 
 [![npm version](https://img.shields.io/npm/v/claude-prism)](https://www.npmjs.com/package/claude-prism)
@@ -11,20 +12,21 @@
 [![node](https://img.shields.io/node/v/claude-prism)](https://nodejs.org)
 [![CI](https://github.com/lazysaturday91/claude-prism/actions/workflows/ci.yml/badge.svg)](https://github.com/lazysaturday91/claude-prism/actions/workflows/ci.yml)
 
-> `ai-coding` · `methodology` · `udec` · `claude-code`
+> `ai-coding` · `methodology` · `eudec` · `claude-code`
 
 # claude-prism
 
-**UDEC methodology framework for AI coding agents.**
+**EUDEC methodology framework for AI coding agents.**
 
-Installs the UDEC methodology — **Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes an entry protocol (Assess) and session transition protocol (Handoff) that bookend the core cycle. Three lightweight hooks enforce the methodology where it matters most.
+Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Three lightweight hooks enforce the methodology where it matters most.
 
 ## The Problem
 
 AI coding agents fail in predictable ways:
 
-| Failure Mode | What Happens | UDEC Fix |
+| Failure Mode | What Happens | EUDEC Fix |
 |---|---|---|
+| Skip essence extraction | Solves the wrong problem entirely | ESSENCE phase |
 | Skip understanding | Builds the wrong thing for 30 minutes | UNDERSTAND phase |
 | No decomposition | One massive change that's hard to review | DECOMPOSE into verifiable batches |
 | No verification | "should work" without evidence | Risk-based verification + Fallback Ladder |
@@ -35,19 +37,18 @@ AI coding agents fail in predictable ways:
 
 ## Core Philosophy
 
-> Never implement what you haven't understood. Never execute what you haven't decomposed.
+> Never implement what you haven't understood. Never understand what you haven't distilled to its essence.
 
 ## What Prism Provides
 
-### 1. UDEC v3 Methodology (the core product)
+### 1. EUDEC Methodology (the core product)
 
-Injected into `CLAUDE.md`, UDEC is a behavioral framework that corrects how AI agents approach tasks:
+Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI agents approach tasks:
 
 ```
-  ASSESS ─── Classify: bugfix / feature / migration / refactor / investigation
-    │                                          (entry protocol)
-    ▼
-┌─────────────────── UDEC Core Cycle ───────────────────┐
+┌─────────────────── EUDEC Core Cycle ──────────────────┐
+│ ESSENCE ── Extract core problem → simplify → expand    │
+│   │        Task type derivation from essence           │
 │ UNDERSTAND ── Sufficiency assessment → ask → align     │
 │   │          Environment validation                    │
 │ DECOMPOSE ── Batches → plan file → quality gate        │
@@ -90,7 +91,7 @@ Hooks enforce the methodology at critical points. All three are deterministic (n
 
 | Command | Purpose |
 |---------|---------|
-| `/claude-prism:prism` | Run full UDEC cycle |
+| `/claude-prism:prism` | Run full EUDEC cycle |
 | `/claude-prism:checkpoint` | Check batch progress with plan-reality sync |
 | `/claude-prism:plan` | List/create/view plan files |
 | `/claude-prism:analytics` | Show usage analytics (blocks, warns, tests) |
@@ -121,7 +122,7 @@ npx claude-prism init --dry-run    # Preview what would be installed
 
 ```
 your-project/
-├── CLAUDE.md                    # UDEC methodology injected
+├── CLAUDE.md                    # EUDEC methodology injected
 ├── .claude-prism.json           # Hook configuration
 ├── .claude/
 │   ├── commands/claude-prism/   # 8 slash commands
@@ -173,9 +174,9 @@ prism uninstall [--global]                         # Remove
 2. AI: 30 minutes autonomous execution, no questions asked
 3. Result: Structure nobody wanted, untested, scope creep everywhere
 
-**After** (with UDEC):
+**After** (with EUDEC):
 1. User: "Refactor auth module"
-2. AI classifies as **Refactor** type, assesses information as **[Partial]**
+2. AI extracts **essence**: "Separate concerns in auth module", classifies as **Refactor**, assesses information as **[Partial]**
 3. Asks: "Keep existing API surface? Or allowed to change public interface?"
 4. Decomposes into 3 batches with size tags, creates plan file
 5. Executes batch 1 → checkpoints with evidence → continues on approval
@@ -187,9 +188,9 @@ Prism auto-detects [oh-my-claudecode](https://github.com/raidenppl/oh-my-claudec
 
 ## Design Philosophy
 
-UDEC is the product. Everything else serves it.
+EUDEC is the product. Everything else serves it.
 
-The methodology works because it targets the specific failure modes of AI agents — not human developers. Humans naturally ask questions and break things down. AI optimizes for speed and skips these steps. UDEC forces the discipline that makes AI-assisted coding reliable.
+The methodology works because it targets the specific failure modes of AI agents — not human developers. Humans naturally ask questions and break things down. AI optimizes for speed and skips these steps. EUDEC forces the discipline that makes AI-assisted coding reliable — starting from the essence of the problem.
 
 The hooks exist to enforce the two most critical rules:
 1. **Don't commit untested code** (commit-guard + test-tracker)

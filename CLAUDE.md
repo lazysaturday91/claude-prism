@@ -1,33 +1,74 @@
 
 <!-- PRISM:START -->
-# Prism — UDEC Methodology Framework
+# Prism — EUDEC Methodology Framework
 
-**UDEC = Understand, Decompose, Execute, Checkpoint** — the core cycle.
-Bookended by ASSESS (entry protocol) and HANDOFF (exit protocol).
+**EUDEC = Essence, Understand, Decompose, Execute, Checkpoint** — the core cycle.
+Bookended by HANDOFF (exit protocol).
 
 ## Core Principle
 
-**Never implement what you haven't understood. Never execute what you haven't decomposed.**
+**Never implement what you haven't understood. Never understand what you haven't distilled to its essence.**
+
+The approach: **Essence → Simplify → Expand**. Strip down to the core of the problem, reduce to its simplest form, then build up from the smallest working unit.
 
 ---
 
-## Entry: ASSESS — Task Type Classification
+## EUDEC 1. ESSENCE — Essence Extraction Protocol
 
-Before any work, classify the task. Each type follows a different optimal path.
+Starting point for all work. Strip down to the core of the problem before implementation.
 
-| Type | Signal | Path |
-|------|--------|------|
-| **Bugfix** | Error message, broken behavior, regression | UNDERSTAND → locate → hypothesis → fix → verify |
-| **Feature** | New capability, user story, "add X" | UNDERSTAND → DECOMPOSE → EXECUTE batches → CHECKPOINT |
-| **Migration** | Pattern replacement across many files, "convert all X to Y" | UNDERSTAND → define pattern + scope → apply × N → verify |
-| **Refactor** | Structural change, "extract", "reorganize" | UNDERSTAND → DECOMPOSE → EXECUTE batches → CHECKPOINT |
-| **Investigation** | "Why does X happen?", "How does Y work?" | explore → analyze → report (no DECOMPOSE needed) |
+### 1-1. Essence Extraction (3 Steps)
+
+| Step | Question | Output |
+|------|----------|--------|
+| **Extract** | "What do they actually want?" | Essence statement (1 sentence) |
+| **Simplify** | "What's the smallest working version?" | Minimal case |
+| **Expansion path** | "How do we grow from here?" | Expansion steps (2-4 steps) |
+
+**Output format:**
+```
+## ESSENCE
+- Essence: [one sentence — no technology/tool names]
+- Minimal case: [simplest working form]
+- Expansion path: minimal → [step1] → [step2] → [complete]
+```
+
+### 1-2. Task Type Derivation
+
+The task type naturally emerges from the essence:
+
+| Essence Character | Type | Path |
+|-------------------|------|------|
+| "X is broken" | Bugfix | UNDERSTAND → locate → fix → verify |
+| "X should be possible" | Feature | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
+| "All X must become Y" | Migration | UNDERSTAND → pattern → batch apply → verify |
+| "X's structure must change" | Refactor | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
+| "Why does X happen?" | Investigation | explore → analyze → report |
 
 **Migration shortcut**: When applying the same transformation to 10+ files, don't decompose into individual file tasks. Define the pattern once, apply in batches of 5-10, verify after each batch. Scope guard thresholds are raised automatically when a plan file exists.
 
+### 1-3. Essence Validation (Error Prevention)
+
+| Trap | Response |
+|------|----------|
+| Mistaking symptom for essence | "Is this the cause, or a consequence?" |
+| Mistaking solution for essence | "Add caching" is not the essence. "Eliminate redundant computation" is. |
+| Too abstract | "Can I write even one line of code from this?" |
+| Too specific | "What's the real problem one level up?" |
+
+**Core test**: If the essence statement contains specific technology/tool names → it's still at solution level, not essence. Go one level higher.
+
+### 1-4. Quality Gate: ESSENCE → UNDERSTAND
+
+Before moving to UNDERSTAND, verify:
+- [ ] Essence statement is technology-neutral (holds without naming specific tools/libraries)
+- [ ] Minimal case is truly "minimal" (can it be reduced further?)
+- [ ] Each step in the expansion path works independently
+- [ ] Task type has been clearly derived
+
 ---
 
-## UDEC 1. UNDERSTAND — Understanding Protocol
+## EUDEC 2. UNDERSTAND — Understanding Protocol
 
 ### 2-1. Information Sufficiency Assessment (MANDATORY)
 
@@ -82,7 +123,7 @@ Before moving to DECOMPOSE:
 
 ---
 
-## UDEC 2. DECOMPOSE — Planning Protocol
+## EUDEC 3. DECOMPOSE — Planning Protocol
 
 ### 3-1. Decomposition Trigger
 
@@ -170,7 +211,7 @@ If any gate fails → resolve before executing. Do not start implementation on a
 
 ---
 
-## UDEC 3. EXECUTE — Execution Protocol
+## EUDEC 4. EXECUTE — Execution Protocol
 
 ### 4-1. Batch Execution
 
@@ -236,7 +277,7 @@ Choose verification proportional to the **risk of the change**, not the file pat
 
 - Same file edited 3+ times → "Possible thrashing. Investigate root cause."
 - Editing file not in plan → "Scope change needed?"
-- 3 consecutive test failures → "Approach problem. Back to UNDERSTAND."
+- 3 consecutive test failures → "Approach problem. Back to ESSENCE — did we get the essence wrong?"
 - New package needed → "Confirm with user"
 - 5 turns autonomous → "Report progress before continuing"
 - Adding workarounds to fix workarounds → "Design problem. Step back."
@@ -250,7 +291,7 @@ Choose verification proportional to the **risk of the change**, not the file pat
 **Thrashing Detector** (beyond simple edit counting):
 - Successive edits reverting previous changes (oscillation) → "Reverting own work. Wrong approach."
 - Scope of changes expanding beyond plan → "Scope creep. Return to DECOMPOSE."
-- Error messages changing type across fixes → "Chasing symptoms, not root cause. Back to UNDERSTAND."
+- Error messages changing type across fixes → "Chasing symptoms, not root cause. Back to ESSENCE."
 
 ### 4-5. Scope Guard
 
@@ -286,7 +327,7 @@ When delegating work to sub-agents:
 
 ---
 
-## UDEC 4. CHECKPOINT — Confirmation Protocol
+## EUDEC 5. CHECKPOINT — Confirmation Protocol
 
 ### Quality Gate: EXECUTE → CHECKPOINT
 
@@ -328,7 +369,7 @@ Plan freshness: verified [date] | Remaining targets: [N] confirmed in code
 
 ### 5-2. Direction Change
 
-User says "change direction" → return to UNDERSTAND
+User says "change direction" → return to ESSENCE (re-examine from the core)
 User says "stop here" → clean exit
 
 ---
@@ -415,6 +456,9 @@ If any of these excuses come to mind, **that's a warning signal**. Stop and retu
 | "Other plans won't conflict" | Check `docs/plans/` for overlapping files |
 | "Tests pass, so it must be correct" | Passing tests only prove what you tested. Check edge cases and negative cases |
 | "3 files is too few to decompose" | Depends on coupling. 2 files in a tightly-coupled legacy system may need decomposition |
+| "I already grasped the essence" | If the essence statement contains technology names, it's still at solution level |
+| "No need to simplify, just implement" | Starting without a minimal case drowns you in complexity |
+| "Expansion path can wait" | Without expansion direction, the minimal case becomes a dead end |
 
 ## 8. Completion Declaration Rules
 
