@@ -98,7 +98,34 @@ Hooks enforce the methodology at critical points. All three are deterministic (n
 | `/claude-prism:doctor` | Diagnose installation health |
 | `/claude-prism:stats` | Version, hooks, plan count |
 | `/claude-prism:update` | Update to latest version |
+| `/claude-prism:hud` | Manage the statusline HUD |
 | `/claude-prism:help` | Command reference |
+
+### 4. HUD Statusline
+
+Prism includes an optional statusline HUD for Claude Code that shows live project context at the bottom of the terminal:
+
+```
+⚡ my-project:main | Opus 4.6 | 🔋84% | 11:17
+📋 auth-refactor 60%(6/10) | 💾 fix: token validation (2h)
+📊 세션 45%(30m) │ 주간92%(목 19:00)
+```
+
+| Line | Content |
+|------|---------|
+| 1 | Project:branch · model · context % · time |
+| 2 | Active plan progress · last commit · test status |
+| 3 | Session and weekly usage (when available) |
+
+Enable during install (interactive prompt) or at any time:
+
+```bash
+prism hud enable    # Install script + update ~/.claude/settings.json
+prism hud disable   # Remove statusLine setting
+prism hud           # Show current status
+```
+
+Or from within Claude Code: `/claude-prism:hud enable`
 
 ### 4. Analytics
 
@@ -112,7 +139,8 @@ prism analytics --detail    # Include per-session breakdown
 ## Installation
 
 ```bash
-npx claude-prism init              # Install with hooks
+npx claude-prism init              # Install with hooks (prompts for HUD)
+npx claude-prism init --hud        # Install + auto-enable HUD
 npx claude-prism init --no-hooks   # Methodology only, no hooks
 npx claude-prism init --global     # Global skill (all projects)
 npx claude-prism init --dry-run    # Preview what would be installed
@@ -125,12 +153,15 @@ your-project/
 ├── CLAUDE.md                    # EUDEC methodology injected
 ├── .claude-prism.json           # Hook configuration
 ├── .claude/
-│   ├── commands/claude-prism/   # 8 slash commands
+│   ├── commands/claude-prism/   # 9 slash commands
 │   ├── hooks/                   # pre-tool.mjs, post-tool.mjs
 │   ├── rules/                   # commit-guard, test-tracker, plan-enforcement
 │   ├── lib/                     # Shared dependencies
 │   └── settings.json            # Hook registration
 └── docs/plans/                  # Plan files (created during work)
+
+~/.claude/                       # (HUD — global, opt-in)
+└── hud/omc-hud.mjs              # Statusline script
 ```
 
 ## Configuration
@@ -158,6 +189,7 @@ Edit `.claude-prism.json`:
 
 ```bash
 prism init [--no-hooks] [--global] [--dry-run]   # Install
+prism init --hud                                   # Install + auto-enable HUD
 prism check [--ci]                                 # Verify installation
 prism doctor                                       # Diagnose issues
 prism stats                                        # Installation summary
@@ -165,6 +197,9 @@ prism analytics [--detail]                         # Usage analytics
 prism reset                                        # Clear hook state
 prism update [--global]                            # Update to latest
 prism uninstall [--global]                         # Remove
+prism hud                                          # HUD status
+prism hud enable                                   # Activate HUD statusline
+prism hud disable                                  # Deactivate HUD statusline
 ```
 
 ## Before & After

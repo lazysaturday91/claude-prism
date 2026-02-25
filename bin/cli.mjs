@@ -11,7 +11,7 @@
  *        prism update
  */
 
-import { init, check, uninstall, update, doctor, stats, reset, initGlobal, uninstallGlobal } from '../lib/installer.mjs';
+import { init, check, uninstall, update, doctor, stats, reset, initGlobal, uninstallGlobal, installHud, uninstallHud, hudStatus } from '../lib/installer.mjs';
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -67,6 +67,34 @@ switch (command) {
     } else {
       console.log('⏭️  Hooks skipped (--no-hooks)');
     }
+
+    // HUD prompt — only ask interactively if not already installed and no flag given
+    if (!hasFlag('no-hud') && process.stdin.isTTY) {
+      const status = hudStatus();
+      if (!status.enabled) {
+        const { createInterface } = await import('readline');
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise(resolve =>
+          rl.question('\n🖥️  Enable Prism HUD statusline? Shows project/branch/plan in Claude Code (y/N): ', a => {
+            rl.close();
+            resolve(a.trim().toLowerCase());
+          })
+        );
+        if (answer === 'y' || answer === 'yes') {
+          const { scriptPath } = installHud();
+          console.log(`✅ HUD enabled → ${scriptPath}`);
+          console.log('   Restart Claude Code to activate.');
+        } else {
+          console.log('⏭️  HUD skipped (run `prism hud enable` anytime)');
+        }
+      } else {
+        console.log('✅ HUD already enabled');
+      }
+    } else if (hasFlag('hud')) {
+      const { scriptPath } = installHud();
+      console.log(`✅ HUD enabled → ${scriptPath}`);
+    }
+
     console.log('\n🌈 Done. Use /prism before complex tasks.');
     break;
   }
@@ -129,6 +157,44 @@ switch (command) {
     reset();
     console.log('✅ Hook state cleared');
     console.log('\n🌈 Fresh start.');
+    break;
+  }
+
+  case 'hud': {
+    const subcommand = args[1];
+
+    if (subcommand === 'enable') {
+      console.log('🌈 claude-prism hud enable\n');
+      const { scriptPath } = installHud();
+      console.log(`  ✅ HUD script → ${scriptPath}`);
+      console.log('  ✅ statusLine → ~/.claude/settings.json');
+      console.log('\n  Restart Claude Code to activate.');
+      break;
+    }
+
+    if (subcommand === 'disable') {
+      console.log('🌈 claude-prism hud disable\n');
+      uninstallHud();
+      console.log('  ✅ statusLine removed from ~/.claude/settings.json');
+      console.log('\n  Restart Claude Code to apply.');
+      break;
+    }
+
+    // Default: show status
+    console.log('🌈 claude-prism hud\n');
+    const status = hudStatus();
+    console.log(`  Status:  ${status.enabled ? '✅ enabled' : '⏭️  disabled'}`);
+    if (status.scriptExists) {
+      console.log(`  Script:  ~/.claude/hud/omc-hud.mjs`);
+    } else {
+      console.log('  Script:  ❌ not installed');
+    }
+    if (status.command) {
+      console.log(`  Command: ${status.command}`);
+    }
+    if (!status.enabled) {
+      console.log('\n  Run `prism hud enable` to activate.');
+    }
     break;
   }
 
@@ -253,9 +319,14 @@ Usage:
   prism update --global                  Update global commands + OMC skill
   prism uninstall                        Remove prism from current project
   prism uninstall --global               Remove global commands + OMC skill
+  prism hud                              Show HUD statusline status
+  prism hud enable                       Install and activate the HUD
+  prism hud disable                      Deactivate the HUD
 
 Options:
   --no-hooks   Skip commit guard hook
+  --hud        Auto-enable HUD during init (no prompt)
+  --no-hud     Skip HUD prompt during init
   --dry-run    Show what init would do without making changes
   --global     Install/uninstall globally (all projects)
   --ci         Output JSON for CI integration
