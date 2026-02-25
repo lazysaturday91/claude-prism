@@ -5,9 +5,9 @@ When this command is invoked, follow the EUDEC framework strictly:
 ## E — ESSENCE
 
 0. **Extract the essence**: Before exploring code, ask: "What is the core problem here — in one sentence, without naming specific tools?"
-   - Output: `본질: [one sentence]`
-   - Output: `최소 케이스: [simplest working version]`
-   - Output: `확장 경로: minimal → [step1] → [step2] → [complete]`
+   - Output: `Essence: [one sentence]`
+   - Output: `Minimal case: [simplest working version]`
+   - Output: `Expansion path: minimal → [step1] → [step2] → [complete]`
 1. **Verify essence quality**:
    - Does the essence sentence avoid specific technology names? If not → still at solution level, go higher
    - Is the minimal case truly minimal? Can it be reduced further?

@@ -115,7 +115,9 @@ Prism includes an optional statusline HUD for Claude Code that shows live projec
 |------|---------|
 | 1 | Project:branch · model · context % · time |
 | 2 | Active plan progress · last commit · test status |
-| 3 | Session and weekly usage (when available) |
+| 3 | Session and weekly usage (auto-refreshed every 30s via Anthropic OAuth API) |
+
+The HUD fetches usage data directly from the Anthropic API using your OAuth credentials (macOS Keychain or `~/.claude/.credentials.json`). Results are cached for 30 seconds to minimize API calls.
 
 Enable during install (interactive prompt) or at any time:
 
