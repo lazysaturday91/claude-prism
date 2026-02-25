@@ -1,4 +1,5 @@
 
+
 <!-- PRISM:START -->
 # Prism — EUDEC Methodology Framework
 
@@ -471,3 +472,4 @@ Before declaring completion:
 3. **READ** — Check the output directly
 4. **CLAIM** — Only declare based on evidence
 <!-- PRISM:END -->
+

@@ -108,7 +108,7 @@ Prism includes an optional statusline HUD for Claude Code that shows live projec
 ```
 ⚡ my-project:main | Opus 4.6 | 🔋84% | 11:17
 📋 auth-refactor 60%(6/10) | 💾 fix: token validation (2h)
-📊 세션 45%(30m) │ 주간92%(목 19:00)
+📊 45%(30m) │ Wkly 93%(Wed 19:00)
 ```
 
 | Line | Content |
@@ -127,7 +127,7 @@ prism hud           # Show current status
 
 Or from within Claude Code: `/claude-prism:hud enable`
 
-### 4. Analytics
+### 5. Analytics
 
 Hook events (blocks, warnings) are automatically logged to session files. View aggregated statistics:
 
