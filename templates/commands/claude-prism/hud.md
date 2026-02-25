@@ -28,7 +28,7 @@ Report format:
   Lines:
     1  ⚡ project:branch | Model | 🔋ctx% | HH:MM
     2  📋 plan name XX%(done/total) | 💾 commit msg (elapsed)
-    3  📊 세션 XX%(Xm) │ 주간XX%(요일 HH:MM)
+    3  📊 XX%(Xm) │ Wkly XX%(Day HH:MM)
 ```
 
 ### enable

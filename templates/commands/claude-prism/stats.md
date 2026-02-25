@@ -18,7 +18,7 @@ When this command is invoked:
 ```
 🌈 claude-prism stats
 
-  Version:     v1.2.1
+  Version:     v1.2.2
   Language:    ko
   Plans:       3 file(s)
   OMC:         ✅ detected

@@ -102,7 +102,7 @@ function formatUsageData(data) {
     ? Math.max(0, Math.round((new Date(data.fiveHourResetsAt) - now) / 60000))
     : 0;
   const weeklyReset = data.weeklyResetsAt ? new Date(data.weeklyResetsAt) : null;
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return {
     session: data.fiveHourPercent,
     weekly: data.weeklyPercent,
@@ -288,7 +288,7 @@ try {
   const line3 = [];
   if (planUsage) {
     const warn = (planUsage.session > 95 || planUsage.weekly > 95) ? '\uD83D\uDD34' : (planUsage.session > 80 || planUsage.weekly > 80) ? '\u26A0\uFE0F' : '';
-    line3.push(`\uD83D\uDCCA ${planUsage.session}%(${planUsage.sessionResetMin}m) \u2502 \uC8FC\uAC04${planUsage.weekly}%(${planUsage.weeklyResetLabel})${warn}`);
+    line3.push(`\uD83D\uDCCA ${planUsage.session}%(${planUsage.sessionResetMin}m) \u2502 Wkly ${planUsage.weekly}%(${planUsage.weeklyResetLabel})${warn}`);
   }
 
   // ── Compose ──
