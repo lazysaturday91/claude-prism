@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] — 2026-02-25
+
+### Fixed
+- Stats template version now matches package.json (was stuck at v0.1.0)
+
+### Changed
+- HUD statusline now fetches usage data directly from Anthropic OAuth API (30s cache TTL)
+- No longer depends on OMC for usage cache refresh
+- Stale cache fallback when API is unreachable
+
 ## [1.0.0] — 2026-02-24
 
 ### Added
