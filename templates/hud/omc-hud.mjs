@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 import { homedir, tmpdir } from 'os';
+import https from 'https';
 
 function shortenModelName(name) {
   return name
@@ -26,24 +27,131 @@ function hasGitChanges(cwd) {
   } catch { return false; }
 }
 
-function getPlanUsage() {
+// ── Usage: Cache + API fetch ──
+
+const USAGE_CACHE_TTL_MS = 30_000;
+const USAGE_CACHE_TTL_FAIL_MS = 15_000;
+
+function getUsageCachePath() {
+  return join(homedir(), '.claude', 'plugins', 'oh-my-claudecode', '.usage-cache.json');
+}
+
+function isCacheFresh(cache) {
+  const ttl = cache.error ? USAGE_CACHE_TTL_FAIL_MS : USAGE_CACHE_TTL_MS;
+  return Date.now() - cache.timestamp < ttl;
+}
+
+function readCredentials() {
+  if (process.platform === 'darwin') {
+    try {
+      const raw = execSync(
+        '/usr/bin/security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null',
+        { encoding: 'utf-8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] }
+      ).trim();
+      if (raw) {
+        const creds = JSON.parse(raw);
+        const obj = creds.claudeAiOauth || creds;
+        if (obj.accessToken) return obj;
+      }
+    } catch {}
+  }
   try {
-    const cachePath = join(homedir(), '.claude', 'plugins', 'oh-my-claudecode', '.usage-cache.json');
-    if (!existsSync(cachePath)) return null;
-    const cache = JSON.parse(readFileSync(cachePath, 'utf-8'));
-    if (cache.error || !cache.data) return null;
-    const now = new Date();
-    const { fiveHourPercent, weeklyPercent, fiveHourResetsAt, weeklyResetsAt } = cache.data;
-    const minutesUntilReset = Math.max(0, Math.round((new Date(fiveHourResetsAt) - now) / 60000));
-    const weeklyReset = new Date(weeklyResetsAt);
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    return {
-      session: fiveHourPercent,
-      weekly: weeklyPercent,
-      sessionResetMin: minutesUntilReset,
-      weeklyResetLabel: `${dayNames[weeklyReset.getDay()]} ${String(weeklyReset.getHours()).padStart(2, '0')}:${String(weeklyReset.getMinutes()).padStart(2, '0')}`
-    };
-  } catch { return null; }
+    const p = join(homedir(), '.claude', '.credentials.json');
+    if (!existsSync(p)) return null;
+    const creds = JSON.parse(readFileSync(p, 'utf-8'));
+    const obj = creds.claudeAiOauth || creds;
+    if (obj.accessToken) return obj;
+  } catch {}
+  return null;
+}
+
+function fetchUsageApi(token) {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'api.anthropic.com',
+      path: '/api/oauth/usage',
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}`, 'anthropic-beta': 'oauth-2025-04-20', 'Content-Type': 'application/json' },
+      timeout: 5000,
+    }, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        if (res.statusCode === 200) { try { resolve(JSON.parse(d)); } catch { resolve(null); } }
+        else resolve(null);
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.end();
+  });
+}
+
+function writeUsageCache(data, error = false) {
+  try {
+    const p = getUsageCachePath();
+    const dir = dirname(p);
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    writeFileSync(p, JSON.stringify({ timestamp: Date.now(), data, error }, null, 2));
+  } catch {}
+}
+
+function formatUsageData(data) {
+  const now = new Date();
+  const minutesUntilReset = data.fiveHourResetsAt
+    ? Math.max(0, Math.round((new Date(data.fiveHourResetsAt) - now) / 60000))
+    : 0;
+  const weeklyReset = data.weeklyResetsAt ? new Date(data.weeklyResetsAt) : null;
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  return {
+    session: data.fiveHourPercent,
+    weekly: data.weeklyPercent,
+    sessionResetMin: minutesUntilReset,
+    weeklyResetLabel: weeklyReset
+      ? `${dayNames[weeklyReset.getDay()]} ${String(weeklyReset.getHours()).padStart(2, '0')}:${String(weeklyReset.getMinutes()).padStart(2, '0')}`
+      : '--:--',
+  };
+}
+
+async function getPlanUsage() {
+  const cachePath = getUsageCachePath();
+  let cache = null;
+  try {
+    if (existsSync(cachePath)) {
+      cache = JSON.parse(readFileSync(cachePath, 'utf-8'));
+      if (cache && !cache.error && cache.data && isCacheFresh(cache)) {
+        return formatUsageData(cache.data);
+      }
+    }
+  } catch {}
+
+  // Cache stale — fetch from Anthropic API
+  const creds = readCredentials();
+  if (creds?.accessToken && (!creds.expiresAt || creds.expiresAt > Date.now())) {
+    const resp = await fetchUsageApi(creds.accessToken);
+    if (resp) {
+      const clamp = v => (v == null || !isFinite(v)) ? 0 : Math.max(0, Math.min(100, v));
+      const fh = resp.five_hour?.utilization;
+      const sd = resp.seven_day?.utilization;
+      if (fh != null || sd != null) {
+        const data = {
+          fiveHourPercent: clamp(fh),
+          weeklyPercent: clamp(sd),
+          fiveHourResetsAt: resp.five_hour?.resets_at || null,
+          weeklyResetsAt: resp.seven_day?.resets_at || null,
+          sonnetWeeklyPercent: resp.seven_day_sonnet?.utilization != null ? clamp(resp.seven_day_sonnet.utilization) : undefined,
+          sonnetWeeklyResetsAt: resp.seven_day_sonnet?.resets_at || undefined,
+        };
+        writeUsageCache(data);
+        return formatUsageData(data);
+      }
+    }
+    writeUsageCache(null, true);
+  }
+
+  // Fallback: return stale cache if available
+  if (cache?.data) return formatUsageData(cache.data);
+  return null;
 }
 
 function getGitRoot(cwd) {
@@ -129,7 +237,7 @@ try {
   const dirName = cwd.split('/').pop();
   const modelName = shortenModelName(context.model?.display_name || 'Claude');
   const remaining = context.context_window?.remaining_percentage;
-  const planUsage = getPlanUsage();
+  const planUsage = await getPlanUsage();
 
   let gitBranch = '';
   let gitDirty = false;
