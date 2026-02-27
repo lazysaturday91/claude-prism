@@ -121,6 +121,10 @@ Before moving to DECOMPOSE:
 - No file/function names mentioned → [Insufficient]. Must ask.
 - Words like "just", "simply", "quickly" → complexity is being underestimated.
 
+### 2-6. Analysis-Only Requests
+
+If no code change is needed (architecture review, cause analysis, investigation), report findings and ask: "Further action needed?" Do NOT proceed to DECOMPOSE/EXECUTE/CHECKPOINT unless the user requests implementation.
+
 ---
 
 ## EUDEC 3. DECOMPOSE — Planning Protocol
@@ -254,6 +258,8 @@ Choose verification proportional to the **risk of the change**, not the file pat
 
 **Every change must have SOME verification.** If no tooling exists, `git diff` review is the minimum.
 
+**Verification scoping**: When running build checks (tsc, lint, etc.), filter output to only changed files. Pre-existing errors in other files are not your concern. Example: `tsc --noEmit 2>&1 | grep -i "<changed-file>"`
+
 **Core Rules:**
 1. Never claim completion without fresh **auto** verification evidence
 2. Never commit code that doesn't build
@@ -313,6 +319,11 @@ When delegating work to sub-agents:
 3. **Read actual files** after agent completes — never trust the agent's report alone
 4. **Run build/test** to verify the agent's changes work
 5. **Fix or retry** if incomplete
+
+**Agent failure recovery**: If a delegated agent partially fails or produces incomplete results:
+1. Verify actual file state (read the file, not just the agent's report)
+2. If partially correct → complete the remaining work directly
+3. If fully wrong → retry with clearer instructions or execute directly
 
 **Never mark a delegated task as complete without reading the actual file state.**
 
