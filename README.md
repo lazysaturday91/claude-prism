@@ -46,18 +46,22 @@ AI coding agents fail in predictable ways:
 Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI agents approach tasks:
 
 ```
-┌─────────────────── EUDEC Core Cycle ──────────────────┐
-│ ESSENCE ── Extract core problem → simplify → expand    │
-│   │        Task type derivation from essence           │
-│ UNDERSTAND ── Sufficiency assessment → ask → align     │
-│   │          Environment validation                    │
-│ DECOMPOSE ── Batches → plan file → quality gate        │
-│   │          Codebase audit → cross-plan check         │
-│ EXECUTE ── Adaptive batches → risk-based verification  │
-│   │        Goal recitation → thrashing detection       │
-│ CHECKPOINT ── Report with evidence → plan-reality sync │
-│              (loops back for next batch)                │
-└────────────────────────────────────────────────────────┘
+┌──────────────────── EUDEC Core Cycle ───────────────────┐
+│ ESSENCE ── Extract core problem → simplify → expand      │
+│   │        Task type derivation from essence             │
+│ UNDERSTAND ── Sufficiency assessment → ask → align       │
+│   │          Environment validation                      │
+│   │          Analysis-only branch (skip D/E/C if no code │
+│   │          change needed)                              │
+│ DECOMPOSE ── Batches → plan file → quality gate          │
+│   │          Codebase audit → cross-plan check           │
+│ EXECUTE ── Adaptive batches → Git-as-Memory (commit per  │
+│   │        batch) → risk-based verification              │
+│   │        Goal recitation → thrashing detection         │
+│   │        Verification scoping (changed files only)     │
+│ CHECKPOINT ── Report with evidence → plan-reality sync   │
+│              (loops back for next batch)                  │
+└──────────────────────────────────────────────────────────┘
     │
     ▼
   HANDOFF ── Session transition doc + Project Memory
@@ -74,6 +78,12 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - Fallback: Automated Tests → Approval Testing → Build → Lint → Smoke Check → Manual Diff
 
 **Quality gates** between phases prevent executing on broken baselines.
+
+**New in v1.2.5:**
+- **Analysis-only branch**: When no code change is needed, UNDERSTAND reports findings without entering DECOMPOSE/EXECUTE/CHECKPOINT
+- **Git-as-Memory**: Commits after each batch as rollback points; `git diff` summaries maintain context in long sessions
+- **Verification scoping**: Build check output filtered to changed files only — pre-existing errors are ignored
+- **Agent failure recovery**: 3-step protocol when delegated agents produce incomplete results
 
 ### 2. Three Focused Hooks
 
@@ -162,8 +172,10 @@ your-project/
 │   └── settings.json            # Hook registration
 └── docs/plans/                  # Plan files (created during work)
 
-~/.claude/                       # (HUD — global, opt-in)
-└── hud/omc-hud.mjs              # Statusline script
+~/.claude/                       # (global install / HUD)
+├── commands/claude-prism/       # 9 slash commands (--global)
+├── skills/prism/SKILL.md        # /prism skill (--global)
+└── hud/omc-hud.mjs              # Statusline script (--hud)
 ```
 
 ## Configuration
