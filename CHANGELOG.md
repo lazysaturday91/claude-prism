@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] — 2026-02-28
+
+### Fixed
+- **Global skill missing Essence phase** — `~/.claude/commands/claude-prism/prism.md` was still UDEC (no Essence). `/claude-prism:prism` and `/prism` now correctly start from ESSENCE.
+- **E/E header collision** — `## E — EXECUTE` → `## X — EXECUTE` in slash command/skill files to disambiguate from `## E — ESSENCE`
+- **SKILL.md step numbering** — was `3,2,3,4...`, now continuous `0-32`
+
+### Added
+- **Analysis-only branch** in UNDERSTAND — skip D/E/C when no code change is needed
+- **Verification scoping** in EXECUTE — filter build output to changed files only
+- **Agent failure recovery** in EXECUTE — 3-step protocol (verify → complete → retry)
+- Backported Git-as-Memory, Goal Recitation, Thrashing Detector, quality gates, Plan-Reality sync to `templates/commands/prism.md` (was only in SKILL.md)
+
+### Changed
+- All 4 EUDEC entry points fully synchronized (rules.md, commands/prism.md, SKILL.md, CLAUDE.md)
+- README: updated EUDEC Core Cycle diagram, added v1.2.5 feature highlights, documented global install file tree
+
 ## [1.2.4] — 2026-02-25
 
 ### Fixed
