@@ -233,7 +233,7 @@ prism hud disable                                  # Deactivate HUD statusline
 
 ## OMC Integration
 
-Prism auto-detects [oh-my-claudecode](https://github.com/raidenppl/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
+Prism auto-detects [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
 
 ## Design Philosophy
 
