@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/pre-tool.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool.mjs",
             "timeout": 5000
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/pre-tool.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool.mjs",
             "timeout": 5000
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/post-tool.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/post-tool.mjs",
             "timeout": 5000
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/precompact.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/precompact.mjs",
             "timeout": 10000
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/session-end.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/session-end.mjs",
             "timeout": 10000
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/subagent-start.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/subagent-start.mjs",
             "timeout": 5000
           }
         ]
@@ -72,7 +72,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/task-completed.mjs",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/task-completed.mjs",
             "timeout": 5000
           }
         ]

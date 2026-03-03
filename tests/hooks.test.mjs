@@ -1,11 +1,11 @@
 /**
  * claude-prism — hook tests
- * commit-guard + test-tracker + plan-enforcement
+ * commit-guard + test-tracker + plan-enforcement + new v1.4 handlers
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { writeState, readState } from '../lib/state.mjs';
@@ -287,5 +287,205 @@ describe('plan-enforcement', () => {
       planEnforcement.evaluate({ action: 'edit', filePath: 'src/a.ts' }, config, stateDir).type,
       'pass'
     );
+  });
+});
+
+// ─── precompact-handler ───
+
+describe('precompact-handler', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-precompact-'));
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('generates HANDOFF.md in docs/', async () => {
+    const { precompactHandler } = await import('../hooks/precompact-handler.mjs');
+    const input = { session_id: 'test-123', trigger: 'auto' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    const result = precompactHandler.evaluate(input, config);
+    assert.ok(existsSync(join(projectDir, 'docs', 'HANDOFF.md')));
+    assert.ok(result.hookSpecificOutput);
+    assert.ok(result.hookSpecificOutput.additionalContext.includes('HANDOFF'));
+  });
+
+  it('includes plan progress when plan exists', async () => {
+    const { precompactHandler } = await import('../hooks/precompact-handler.mjs');
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, '.prism', 'plans', '2026-01-01-test.md'),
+      '## Batch 1\n- [x] Task A\n- [ ] Task B\n');
+    const input = { session_id: 'test-123', trigger: 'manual' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    precompactHandler.evaluate(input, config);
+    const content = readFileSync(join(projectDir, 'docs', 'HANDOFF.md'), 'utf8');
+    assert.ok(content.includes('1/2'));
+  });
+});
+
+// ─── session-end-handler ───
+
+describe('session-end-handler', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-session-end-'));
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('generates HANDOFF.md and PROJECT-MEMORY.md', async () => {
+    const { sessionEndHandler } = await import('../hooks/session-end-handler.mjs');
+    const input = { session_id: 'test-456', reason: 'clear' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    sessionEndHandler.evaluate(input, config);
+    assert.ok(existsSync(join(projectDir, 'docs', 'HANDOFF.md')));
+    assert.ok(existsSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md')));
+  });
+
+  it('appends session entry to PROJECT-MEMORY.md', async () => {
+    const { sessionEndHandler } = await import('../hooks/session-end-handler.mjs');
+    // Create initial PROJECT-MEMORY.md
+    mkdirSync(join(projectDir, 'docs'), { recursive: true });
+    writeFileSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md'), '# Existing\n');
+
+    const input = { session_id: 'test-789', reason: 'logout' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    sessionEndHandler.evaluate(input, config);
+
+    const content = readFileSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md'), 'utf8');
+    assert.ok(content.includes('# Existing'));
+    assert.ok(content.includes('Session'));
+    assert.ok(content.includes('logout'));
+  });
+
+  it('includes plan progress in memory entry', async () => {
+    const { sessionEndHandler } = await import('../hooks/session-end-handler.mjs');
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, '.prism', 'plans', '2026-01-01-plan.md'),
+      '- [x] Done\n- [ ] Todo\n');
+
+    const input = { session_id: 'test-000', reason: 'other' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    sessionEndHandler.evaluate(input, config);
+
+    const content = readFileSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md'), 'utf8');
+    assert.ok(content.includes('1/2'));
+  });
+});
+
+// ─── subagent-scope-injector ───
+
+describe('subagent-scope-injector', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-scope-'));
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('returns null when no plan exists', async () => {
+    const { scopeInjector } = await import('../hooks/subagent-scope-injector.mjs');
+    const input = { session_id: 'test', agent_id: 'a1', agent_type: 'executor' };
+    const config = { projectRoot: projectDir };
+    const result = scopeInjector.evaluate(input, config);
+    assert.equal(result, null);
+  });
+
+  it('returns scope context when plan exists', async () => {
+    const { scopeInjector } = await import('../hooks/subagent-scope-injector.mjs');
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, '.prism', 'plans', '2026-01-01-feature.md'),
+      '## Batch 1: Setup\n- [x] Create `src/config.ts`\n- [ ] Create `src/handler.ts`\n');
+
+    const input = { session_id: 'test', agent_id: 'a1', agent_type: 'executor' };
+    const config = { projectRoot: projectDir };
+    const result = scopeInjector.evaluate(input, config);
+    assert.ok(result);
+    assert.ok(result.hookSpecificOutput.additionalContext.includes('Plan:'));
+    assert.ok(result.hookSpecificOutput.additionalContext.includes('1/2'));
+  });
+});
+
+// ─── task-plan-sync ───
+
+describe('task-plan-sync', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-plansync-'));
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('returns null when no plan exists', async () => {
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const emptyDir = mkdtempSync(join(tmpdir(), 'prism-empty-'));
+    const input = { task_id: '1', task_subject: 'Test task' };
+    const config = { projectRoot: emptyDir };
+    const result = planSync.evaluate(input, config);
+    rmSync(emptyDir, { recursive: true, force: true });
+    assert.equal(result, null);
+  });
+
+  it('updates matching checkbox in plan file', async () => {
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const planPath = join(projectDir, '.prism', 'plans', '2026-01-01-test.md');
+    writeFileSync(planPath, '## Batch 1\n- [ ] Create user authentication module\n- [ ] Add login tests\n');
+
+    const input = { task_id: '1', task_subject: 'Create user authentication module' };
+    const config = { projectRoot: projectDir, webhooks: [], matchThreshold: 0.3 };
+    const result = planSync.evaluate(input, config);
+
+    assert.ok(result);
+    const content = readFileSync(planPath, 'utf8');
+    assert.ok(content.includes('[x] Create user authentication module'));
+    assert.ok(content.includes('[ ] Add login tests'));
+  });
+
+  it('returns progress info in additionalContext', async () => {
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const planPath = join(projectDir, '.prism', 'plans', '2026-01-01-test.md');
+    writeFileSync(planPath, '## Batch 1\n- [x] Task A\n- [ ] Task B — create handler\n- [ ] Task C\n');
+
+    const input = { task_id: '2', task_subject: 'Task B create handler' };
+    const config = { projectRoot: projectDir, webhooks: [], matchThreshold: 0.3 };
+    const result = planSync.evaluate(input, config);
+
+    assert.ok(result);
+    assert.ok(result.hookSpecificOutput.additionalContext.includes('2/3'));
+  });
+
+  it('returns null when no task_subject matches', async () => {
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const planPath = join(projectDir, '.prism', 'plans', '2026-01-01-test.md');
+    writeFileSync(planPath, '## Batch 1\n- [ ] Implement database layer\n');
+
+    const input = { task_id: '1', task_subject: 'completely unrelated topic xyz' };
+    const config = { projectRoot: projectDir, webhooks: [], matchThreshold: 0.3 };
+    const result = planSync.evaluate(input, config);
+    assert.equal(result, null);
+  });
+
+  it('returns null when task_subject is empty', async () => {
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const planPath = join(projectDir, '.prism', 'plans', '2026-01-01-test.md');
+    writeFileSync(planPath, '## Batch 1\n- [ ] Task\n');
+
+    const input = { task_id: '1', task_subject: '' };
+    const config = { projectRoot: projectDir, webhooks: [] };
+    const result = planSync.evaluate(input, config);
+    assert.equal(result, null);
   });
 });

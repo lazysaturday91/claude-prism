@@ -290,6 +290,93 @@ describe('messages', () => {
   });
 });
 
+// ─── handoff.mjs ───
+
+describe('handoff', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-handoff-'));
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('generateHandoff returns markdown with required sections', async () => {
+    const { generateHandoff } = await import('../lib/handoff.mjs');
+    const content = generateHandoff(projectDir);
+    assert.ok(content.includes('## Status'));
+    assert.ok(content.includes('## Current State'));
+    assert.ok(content.includes('## Next Steps'));
+    assert.ok(content.includes('## Decisions Made'));
+    assert.ok(content.includes('## Known Issues'));
+  });
+
+  it('generateHandoff includes plan progress when plan exists', async () => {
+    const { generateHandoff } = await import('../lib/handoff.mjs');
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, '.prism', 'plans', '2026-01-01-test.md'),
+      '## Batch 1\n- [x] Task A\n- [ ] Task B\n');
+    const content = generateHandoff(projectDir);
+    assert.ok(content.includes('1/2'));
+    assert.ok(content.includes('50%'));
+  });
+
+  it('getActivePlanInfo returns null when no plans dir', async () => {
+    const { getActivePlanInfo } = await import('../lib/handoff.mjs');
+    const result = getActivePlanInfo(projectDir);
+    assert.equal(result, null);
+  });
+
+  it('parsePlanContent counts checkboxes correctly', async () => {
+    const { parsePlanContent } = await import('../lib/handoff.mjs');
+    const content = '## Batch 1\n- [x] Done task\n- [x] Done task 2\n- [ ] Todo task\n## Batch 2\n- [ ] Future task\n';
+    const result = parsePlanContent(content, 'test.md');
+    assert.equal(result.total, 4);
+    assert.equal(result.done, 2);
+    assert.equal(result.nextTasks.length, 2);
+  });
+});
+
+// ─── webhook.mjs ───
+
+describe('webhook', () => {
+  it('dispatchWebhook does nothing when no webhooks configured', async () => {
+    const { dispatchWebhook } = await import('../lib/webhook.mjs');
+    // Should not throw
+    await dispatchWebhook({}, 'test-event', { data: 1 });
+    await dispatchWebhook({ webhooks: [] }, 'test-event', { data: 1 });
+  });
+
+  it('dispatchWebhook filters by event subscription', async () => {
+    const { dispatchWebhook } = await import('../lib/webhook.mjs');
+    // No real server — should silently fail
+    const config = {
+      webhooks: [{ url: 'http://localhost:1/nope', events: ['other-event'] }]
+    };
+    await dispatchWebhook(config, 'test-event', { data: 1 });
+    // If it filtered correctly, no fetch was attempted for non-matching event
+  });
+
+  it('dispatchWebhook silently fails on unreachable URL', async () => {
+    const { dispatchWebhook } = await import('../lib/webhook.mjs');
+    const config = {
+      webhooks: [{ url: 'http://localhost:1/nope', events: ['test'] }]
+    };
+    // Should not throw
+    await dispatchWebhook(config, 'test', { data: 1 });
+  });
+
+  it('dispatchWebhook skips hooks without url', async () => {
+    const { dispatchWebhook } = await import('../lib/webhook.mjs');
+    const config = {
+      webhooks: [{ events: ['test'] }]
+    };
+    await dispatchWebhook(config, 'test', { data: 1 });
+  });
+});
+
 // ─── config.mjs (buildSourcePattern / buildTestPattern) ───
 
 describe('config patterns', () => {

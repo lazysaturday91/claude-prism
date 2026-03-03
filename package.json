@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "EUDEC methodology framework for AI coding agents — Essence, Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {
@@ -30,7 +30,10 @@
     "bin/",
     "lib/",
     "hooks/",
+    "scripts/",
     "templates/",
+    ".claude-plugin/",
+    "plugin-hooks.json",
     "README.md",
     "CHANGELOG.md"
   ],

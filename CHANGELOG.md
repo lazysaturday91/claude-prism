@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-03-03
+
+### Added
+- **4 new hook events** — PreCompact, SessionEnd, SubagentStart, TaskCompleted
+  - `precompact-handler` — auto-generates `docs/HANDOFF.md` before context compaction
+  - `session-end-handler` — saves HANDOFF + appends session summary to `docs/PROJECT-MEMORY.md`
+  - `subagent-scope-injector` — injects current plan batch context into subagent via `additionalContext`
+  - `task-plan-sync` — auto-updates plan file checkboxes on task completion (fuzzy keyword match)
+- **Native Claude Code plugin** — `.claude-plugin/plugin.json` + `plugin-hooks.json`
+  - `claude plugin install claude-prism` for plugin mode
+  - `prism init` (CLI mode) remains for CLAUDE.md injection
+  - 6 plugin script runners in `scripts/`
+- **HTTP webhook dispatcher** (`lib/webhook.mjs`) — non-blocking fire-and-forget notifications
+  - Configure via `.prism/config.json` `webhooks` array
+  - Events: `compaction`, `session-end`, `batch-complete`
+- **HANDOFF.md generator** (`lib/handoff.mjs`) — shared logic for auto-generating session handoff documents
+  - Plan progress parsing (checkbox counting, batch detection)
+  - Git status integration (branch, uncommitted, recent commits)
+- **Checkpoint integration** in EUDEC rules — `Esc+Esc` / `/rewind` references in EXECUTE protocol
+- 30 new tests covering all new handlers, utilities, plugin structure, and installer paths
+
+### Changed
+- `templates/settings.json` — 6 events (was 2)
+- `lib/installer.mjs` — installs 6 runners, 7 rules, 8 libs (was 2/3/6)
+- `lib/config.mjs` — defaults include `webhooks` and 4 new hook configs
+- `lib/messages.mjs` — 4 new message templates
+- `package.json` `files` includes `scripts/`, `.claude-plugin/`, `plugin-hooks.json`
+
 ## [1.3.0] — 2026-03-03
 
 ### Added

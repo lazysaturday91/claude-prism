@@ -736,3 +736,118 @@ describe('cli self-update detection', () => {
     assert.ok(!result?.sourceRepo);
   });
 });
+
+// ─── plugin structure ───
+
+describe('plugin structure', () => {
+  it('plugin.json exists and is valid JSON', () => {
+    const pluginPath = join(process.cwd(), '.claude-plugin', 'plugin.json');
+    assert.ok(existsSync(pluginPath), 'plugin.json should exist');
+    const plugin = JSON.parse(readFileSync(pluginPath, 'utf8'));
+    assert.equal(plugin.name, 'claude-prism');
+    assert.ok(plugin.hooks);
+    assert.ok(plugin.skills);
+  });
+
+  it('plugin-hooks.json exists and registers 6 events', () => {
+    const hooksPath = join(process.cwd(), 'plugin-hooks.json');
+    assert.ok(existsSync(hooksPath), 'plugin-hooks.json should exist');
+    const hooks = JSON.parse(readFileSync(hooksPath, 'utf8'));
+    const events = Object.keys(hooks.hooks);
+    assert.ok(events.includes('PreToolUse'));
+    assert.ok(events.includes('PostToolUse'));
+    assert.ok(events.includes('PreCompact'));
+    assert.ok(events.includes('SessionEnd'));
+    assert.ok(events.includes('SubagentStart'));
+    assert.ok(events.includes('TaskCompleted'));
+  });
+
+  it('all plugin script runners exist', () => {
+    const scripts = ['pre-tool.mjs', 'post-tool.mjs', 'precompact.mjs', 'session-end.mjs', 'subagent-start.mjs', 'task-completed.mjs'];
+    for (const script of scripts) {
+      assert.ok(existsSync(join(process.cwd(), 'scripts', script)), `scripts/${script} should exist`);
+    }
+  });
+});
+
+// ─── new hook installer paths ───
+
+describe('new hook installer paths', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-cli-'));
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('init installs all 6 hook runners', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    const hooksDir = join(projectDir, '.claude', 'hooks');
+    for (const hook of ['pre-tool.mjs', 'post-tool.mjs', 'precompact.mjs', 'session-end.mjs', 'subagent-start.mjs', 'task-completed.mjs']) {
+      assert.ok(existsSync(join(hooksDir, hook)), `${hook} should be installed`);
+    }
+  });
+
+  it('init installs all 7 rule files', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    const rulesDir = join(projectDir, '.claude', 'rules');
+    for (const rule of ['commit-guard.mjs', 'test-tracker.mjs', 'plan-enforcement.mjs', 'precompact-handler.mjs', 'session-end-handler.mjs', 'subagent-scope-injector.mjs', 'task-plan-sync.mjs']) {
+      assert.ok(existsSync(join(rulesDir, rule)), `${rule} should be installed`);
+    }
+  });
+
+  it('init installs all 8 lib files', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    const libDir = join(projectDir, '.claude', 'lib');
+    for (const lib of ['state.mjs', 'config.mjs', 'utils.mjs', 'messages.mjs', 'pipeline.mjs', 'session.mjs', 'handoff.mjs', 'webhook.mjs']) {
+      assert.ok(existsSync(join(libDir, lib)), `${lib} should be installed`);
+    }
+  });
+
+  it('settings.json includes all 6 hook events after init', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    const settings = JSON.parse(readFileSync(join(projectDir, '.claude', 'settings.json'), 'utf8'));
+    assert.ok(settings.hooks.PreToolUse);
+    assert.ok(settings.hooks.PostToolUse);
+    assert.ok(settings.hooks.PreCompact);
+    assert.ok(settings.hooks.SessionEnd);
+    assert.ok(settings.hooks.SubagentStart);
+    assert.ok(settings.hooks.TaskCompleted);
+  });
+
+  it('dryRun shows new hook files', async () => {
+    const { dryRun } = await import('../lib/installer.mjs');
+    const result = dryRun(projectDir, { hooks: true });
+    const hookPaths = result.actions.filter(a => a.type === 'hook').map(a => a.path);
+    assert.ok(hookPaths.some(p => p.includes('precompact.mjs')));
+    assert.ok(hookPaths.some(p => p.includes('session-end.mjs')));
+    assert.ok(hookPaths.some(p => p.includes('subagent-start.mjs')));
+    assert.ok(hookPaths.some(p => p.includes('task-completed.mjs')));
+  });
+
+  it('doctor reports missing new hook files', async () => {
+    const { init, doctor } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    // Remove one new hook
+    rmSync(join(projectDir, '.claude', 'hooks', 'precompact.mjs'));
+    const result = doctor(projectDir);
+    assert.ok(!result.healthy);
+    assert.ok(result.issues.some(i => i.includes('precompact.mjs')));
+  });
+
+  it('check returns hooks=false when new hook missing', async () => {
+    const { init, check } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    rmSync(join(projectDir, '.claude', 'hooks', 'session-end.mjs'));
+    const result = check(projectDir);
+    assert.equal(result.hooks, false);
+  });
+});

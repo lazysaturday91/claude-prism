@@ -327,6 +327,13 @@ When delegating work to sub-agents:
 
 **Never mark a delegated task as complete without reading the actual file state.**
 
+### 4-8. Checkpoint Integration
+
+Claude Code creates automatic checkpoints on every edit. Use `Esc+Esc` or `/rewind` to restore.
+- Before risky changes: checkpoint exists automatically
+- After failed batch: consider `/rewind` to restore clean state before retry
+- Checkpoints complement Git-as-Memory: git for cross-session, checkpoints for intra-session
+
 ### 4-7. Project-Type Verification Examples
 
 | Project Type | Syntax Check | Smoke Test | Approval Test |

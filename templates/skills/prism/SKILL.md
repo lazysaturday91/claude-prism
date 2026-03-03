@@ -113,7 +113,7 @@ AI agents optimize for speed, not correctness. Without structure, they skip unde
     - Simple changes (imports, types, config): 5-8 per batch
     - Standard changes (feature add/modify): 3-4 per batch
     - Complex changes (new module, architecture): 1-2 per batch
-19. **Git-as-Memory**: commit after each completed batch as a rollback point. Use `git diff` summaries to maintain context in long sessions.
+19. **Git-as-Memory**: commit after each completed batch as a rollback point. Use `git diff` summaries to maintain context in long sessions. Claude Code checkpoints (`Esc+Esc` / `/rewind`) complement git for intra-session rollback.
 20. Apply risk-based verification:
     - **High risk** (business logic, auth, data mutation): TDD — failing test → implement → pass. Include negative tests.
     - **Medium risk** (new components with logic, API integration): Build + lint pass

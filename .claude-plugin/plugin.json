@@ -1,0 +1,10 @@
+{
+  "name": "claude-prism",
+  "version": "1.4.0",
+  "description": "EUDEC methodology framework for AI coding agents",
+  "author": { "name": "lazysaturday91" },
+  "repository": "https://github.com/lazysaturday91/claude-prism",
+  "license": "MIT",
+  "skills": "./templates/skills/",
+  "hooks": "./plugin-hooks.json"
+}

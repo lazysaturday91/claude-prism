@@ -18,7 +18,7 @@
 
 **EUDEC methodology framework for AI coding agents.**
 
-Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Three lightweight hooks enforce the methodology where it matters most.
+Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Seven hooks enforce the methodology and automate session management.
 
 ## The Problem
 
@@ -79,11 +79,15 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 
 **Quality gates** between phases prevent executing on broken baselines.
 
-**New in v1.3.0:**
-- **`.prism/` brand directory** — config, version, and plans live under `.prism/` for brand visibility on GitHub
-- **Config is now committed** — `.prism/config.json` is tracked by git (no longer gitignored)
-- **Automatic migration** — `prism update` migrates from `.claude-prism.json` and `docs/plans/` seamlessly
-- **Backward-compatible** — plan-enforcement hook still checks `docs/plans/` as fallback
+**New in v1.4.0:**
+- **Native Claude Code plugin** — `claude plugin install claude-prism` for zero-config setup
+- **4 new hook events** — PreCompact (auto-HANDOFF), SessionEnd (session protection), SubagentStart (scope injection), TaskCompleted (plan auto-update)
+- **HTTP webhooks** — fire-and-forget notifications on compaction, session-end, batch-complete
+- **Checkpoint integration** — `Esc+Esc` / `/rewind` references complement Git-as-Memory
+
+**v1.3.0:**
+- `.prism/` brand directory — config, version, and plans live under `.prism/`
+- Automatic 3-stage migration from legacy paths
 
 **v1.2.5:**
 - **Analysis-only branch**: When no code change is needed, UNDERSTAND reports findings without entering DECOMPOSE/EXECUTE/CHECKPOINT
@@ -91,17 +95,21 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Verification scoping**: Build check output filtered to changed files only — pre-existing errors are ignored
 - **Agent failure recovery**: 3-step protocol when delegated agents produce incomplete results
 
-### 2. Three Focused Hooks
+### 2. Seven Focused Hooks
 
-Hooks enforce the methodology at critical points. All three are deterministic (no heuristics, no state accumulation issues):
+Hooks enforce the methodology at critical points:
 
-| Hook | What It Does | Trigger |
+| Hook | Event | What It Does |
 |---|---|---|
-| **commit-guard** | Blocks commits when tests failed or haven't run | `git commit` |
-| **test-tracker** | Records test pass/fail results | Test commands (20 patterns) |
-| **plan-enforcement** | Warns when editing 6+ files without a plan | `Edit` / `Write` |
+| **commit-guard** | PreToolUse | Blocks commits when tests failed or haven't run |
+| **plan-enforcement** | PreToolUse | Warns when editing 6+ files without a plan |
+| **test-tracker** | PostToolUse | Records test pass/fail results |
+| **precompact-handler** | PreCompact | Auto-generates `docs/HANDOFF.md` before compaction |
+| **session-end-handler** | SessionEnd | Saves HANDOFF + appends to `docs/PROJECT-MEMORY.md` |
+| **scope-injector** | SubagentStart | Injects current plan batch context into subagent |
+| **plan-sync** | TaskCompleted | Auto-updates plan file checkboxes on task completion |
 
-**Why only three?** Previous versions had 6 hooks (scope-guard, debug-loop, alignment, turn-reporter). They produced false positives that undermined the methodology they were supposed to enforce. These three survive because they're deterministic: file count + plan existence, test result parsing, commit detection. No ambiguity.
+The original three hooks (commit-guard, test-tracker, plan-enforcement) are deterministic enforcers. The four new hooks (v1.4.0) are **session lifecycle automations** — they don't block or warn, they auto-save context and sync plan state.
 
 ### 3. Slash Commands
 
@@ -156,6 +164,16 @@ prism analytics --detail    # Include per-session breakdown
 
 ## Installation
 
+### Option A: Plugin Mode (recommended)
+
+```bash
+claude plugin install claude-prism
+```
+
+Plugin mode auto-registers hooks and skills. Run `prism init` additionally if you want CLAUDE.md methodology injection (plugins cannot modify CLAUDE.md).
+
+### Option B: CLI Mode
+
 ```bash
 npx claude-prism init              # Install with hooks (prompts for HUD)
 npx claude-prism init --hud        # Install + auto-enable HUD
@@ -168,7 +186,7 @@ npx claude-prism init --dry-run    # Preview what would be installed
 
 ```
 your-project/
-├── CLAUDE.md                    # EUDEC methodology injected
+├── CLAUDE.md                    # EUDEC methodology injected (CLI mode only)
 ├── .prism/
 │   ├── config.json              # Hook configuration (committed)
 │   ├── .version                 # Installed version (gitignored)
@@ -176,10 +194,11 @@ your-project/
 │   └── plans/                   # Plan files (created during work)
 ├── .claude/
 │   ├── commands/claude-prism/   # 9 slash commands
-│   ├── hooks/                   # pre-tool.mjs, post-tool.mjs
-│   ├── rules/                   # commit-guard, test-tracker, plan-enforcement
-│   ├── lib/                     # Shared dependencies
-│   └── settings.json            # Hook registration
+│   ├── hooks/                   # 6 runners (pre-tool, post-tool, precompact,
+│   │                            #   session-end, subagent-start, task-completed)
+│   ├── rules/                   # 7 rule modules
+│   ├── lib/                     # 8 shared dependencies
+│   └── settings.json            # Hook registration (6 events)
 
 ~/.claude/                       # (global install / HUD)
 ├── commands/claude-prism/       # 9 slash commands (--global)
@@ -197,8 +216,19 @@ Edit `.prism/config.json`:
   "hooks": {
     "commit-guard": { "enabled": true, "maxTestAge": 300 },
     "test-tracker": { "enabled": true },
-    "plan-enforcement": { "enabled": true, "warnAt": 6 }
-  }
+    "plan-enforcement": { "enabled": true, "warnAt": 6 },
+    "precompact-handler": { "enabled": true },
+    "session-end-handler": { "enabled": true },
+    "subagent-scope-injector": { "enabled": true },
+    "task-plan-sync": { "enabled": true, "matchThreshold": 0.3 }
+  },
+  "webhooks": [
+    {
+      "url": "https://your-server.com/webhook",
+      "events": ["compaction", "session-end", "batch-complete"],
+      "headers": { "Authorization": "Bearer token" }
+    }
+  ]
 }
 ```
 
@@ -207,6 +237,8 @@ Edit `.prism/config.json`:
 | `version` | 1 | Config schema version (for future migrations) |
 | `commit-guard.maxTestAge` | 300 | Seconds before test run is considered stale |
 | `plan-enforcement.warnAt` | 6 | Unique source file count that triggers plan warning |
+| `task-plan-sync.matchThreshold` | 0.3 | Keyword overlap ratio for fuzzy task matching |
+| `webhooks` | `[]` | HTTP endpoints for event notifications |
 
 ## CLI Commands
 
@@ -244,20 +276,24 @@ prism hud disable                                  # Deactivate HUD statusline
 
 Prism auto-detects [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
 
-## Upgrading to v1.3.0
+## Upgrading
 
-v1.3.0 moves project files from scattered locations to a unified `.prism/` directory:
+### To v1.4.0
 
-```
-Before                          After
-.claude-prism.json (gitignored) → .prism/config.json (committed)
-.claude/.prism-version          → .prism/.version (gitignored)
-docs/plans/                     → .prism/plans/ (committed)
+```bash
+npx claude-prism update
 ```
 
-**Migration is automatic**: just run `prism update`. All files are moved, legacy paths are cleaned up, and the plan-enforcement hook falls back to `docs/plans/` for backward compatibility.
+v1.4.0 adds 4 new hook runners + 4 rule files + 2 new libs. `prism update` installs them automatically. Existing hooks and configuration are preserved.
 
-After updating, you may want to `git add .prism/` to commit the new config and plans directory.
+**Optional**: Install as a native plugin for auto-registration:
+```bash
+claude plugin install claude-prism
+```
+
+### To v1.3.0
+
+v1.3.0 moves project files to `.prism/` directory. Migration is automatic via `prism update`.
 
 ## Design Philosophy
 
