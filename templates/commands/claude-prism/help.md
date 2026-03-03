@@ -6,7 +6,7 @@
 |---------|-------------|
 | `/claude-prism:prism` | Start full EUDEC workflow (Essence → Understand → Decompose → Execute → Checkpoint). Also handles analysis-only requests — stops after U phase when no code change is needed. |
 | `/claude-prism:checkpoint` | Check current batch progress, show next batch preview |
-| `/claude-prism:plan` | List, create, or view plan files in `docs/plans/` |
+| `/claude-prism:plan` | List, create, or view plan files in `.prism/plans/` |
 | `/claude-prism:doctor` | Diagnose installation health and suggest fixes |
 | `/claude-prism:stats` | Show project statistics, hook status, and plan progress |
 | `/claude-prism:help` | This reference |

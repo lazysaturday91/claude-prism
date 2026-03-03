@@ -39,11 +39,16 @@ export const planEnforcement = {
     const threshold = config.warnAt || 6;
     if (files.length < threshold) return { type: 'pass' };
 
-    // Check for plan file in docs/plans/
+    // Check for plan file in .prism/plans/ (with docs/plans/ fallback)
     const projectRoot = config.projectRoot || process.cwd();
-    const plansDir = join(projectRoot, 'docs', 'plans');
+    const plansDir = join(projectRoot, '.prism', 'plans');
     if (existsSync(plansDir)) {
       const plans = readdirSync(plansDir).filter(f => f.endsWith('.md'));
+      if (plans.length > 0) return { type: 'pass' };
+    }
+    const legacyPlansDir = join(projectRoot, 'docs', 'plans');
+    if (existsSync(legacyPlansDir)) {
+      const plans = readdirSync(legacyPlansDir).filter(f => f.endsWith('.md'));
       if (plans.length > 0) return { type: 'pass' };
     }
 

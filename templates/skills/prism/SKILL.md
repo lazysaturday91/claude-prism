@@ -99,12 +99,12 @@ AI agents optimize for speed, not correctness. Without structure, they skip unde
 13. **Assign verification strategy** per task: `| Verify: TDD` or `| Verify: Build` or `| Verify: Visual`
 14. **Pre-decomposition checklist**:
     - **Codebase audit**: grep/search to verify targets actually exist in code
-    - **Cross-plan check**: if other plans exist in `docs/plans/`, identify overlapping files
+    - **Cross-plan check**: if other plans exist in `.prism/plans/`, identify overlapping files
     - Required types/interfaces have the necessary fields?
     - External package APIs behave as expected?
     - Cross-package dependencies identified and noted as prerequisites?
 15. **Quality gate**: Plan file exists and targets verified, project builds, dependencies resolved, environment validated. All must pass before execution.
-16. **Save plan** to `docs/plans/YYYY-MM-DD-<topic>.md`
+16. **Save plan** to `.prism/plans/YYYY-MM-DD-<topic>.md`
 17. **Get approval**: "Proceed with this plan?"
 
 ## X — EXECUTE

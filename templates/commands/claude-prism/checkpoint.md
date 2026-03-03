@@ -2,7 +2,7 @@
 
 When this command is invoked:
 
-1. **Read the plan file** from `docs/plans/` (most recent matching file)
+1. **Read the plan file** from `.prism/plans/` (most recent matching file)
 2. **Auto-count progress** by running:
    - `grep -c '\- \[x\]' <plan-file>` → completed count
    - `grep -c '\- \[ \]' <plan-file>` → remaining count

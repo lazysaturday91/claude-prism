@@ -1,5 +1,4 @@
 node_modules/
 .omc/
 .claude/
-.claude-prism.json
 *.log

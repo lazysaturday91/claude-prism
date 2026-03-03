@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-03-03
+
+### Added
+- **`.prism/` brand directory** — unified home for all Prism project files
+  - `.prism/config.json` — hook configuration (committed to git, visible on GitHub)
+  - `.prism/.version` — installed version (gitignored via `.prism/.gitignore`)
+  - `.prism/plans/` — plan files (committed)
+- **3-stage migration chain** in `prism update`:
+  - `.prism.json` → `.claude-prism.json` → `.prism/config.json`
+  - `.claude/.prism-version` → `.prism/.version`
+  - `docs/plans/` → `.prism/plans/` (moves files, cleans empty dirs)
+- **Backward-compatible fallback** in plan-enforcement hook (`docs/plans/` still checked)
+- Migration tests (4 new: config, version, plans, `.claude-prism.json` detection)
+- `.prism/.gitignore` auto-creation (ignores `.version`)
+
+### Changed
+- Config path: `.claude-prism.json` → `.prism/config.json`
+- Version path: `.claude/.prism-version` → `.prism/.version`
+- Plans path: `docs/plans/` → `.prism/plans/`
+- `.claude-prism.json` removed from `.gitignore` (config is now committed via `.prism/`)
+- All templates, commands, and docs updated to reference new paths
+- `prism doctor` now detects legacy `.claude-prism.json` as a migration target
+- `prism stats` reads plans from `.prism/plans/` with `docs/plans/` fallback
+- `prism uninstall` cleans both new and legacy paths
+
+### Migration
+Existing users: run `prism update` — all files are automatically migrated. No manual steps needed. The `docs/plans/` fallback ensures hooks work even without migration.
+
 ## [1.2.6] — 2026-02-28
 
 ### Fixed
@@ -56,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - session.mjs included in installed lib files
 - CHANGELOG.md (this file)
 - GitHub Actions CI workflow (test on push/PR)
-- Config schema versioning (`.claude-prism.json` version field)
+- Config schema versioning (config version field)
 - Verification Fallback Ladder (7-level, from automated tests to manual diff)
 - Quality Gates between DECOMPOSE→EXECUTE and EXECUTE→CHECKPOINT
 - Goal Recitation mechanism at batch boundaries

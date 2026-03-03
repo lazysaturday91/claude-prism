@@ -8,6 +8,10 @@
 
 
 
+
+
+
+
 <!-- PRISM:START -->
 # Prism — EUDEC Methodology Framework
 
@@ -168,7 +172,7 @@ If no code change is needed (architecture review, cause analysis, investigation)
 ### 3-3. Plan File Persistence
 
 Save multi-step plans (6+ files) as markdown:
-- **Path**: `docs/plans/YYYY-MM-DD-<topic>.md`
+- **Path**: `.prism/plans/YYYY-MM-DD-<topic>.md`
 
 ```markdown
 ## Goal
@@ -205,7 +209,7 @@ Tech stack, key decisions, 2-3 sentences max.
 
 Before creating the plan:
 - [ ] **Codebase audit**: grep/search to verify targets actually exist in code (don't trust assumptions from prior sessions)
-- [ ] **Cross-plan check**: if other plans exist in `docs/plans/`, identify overlapping files and note dependencies
+- [ ] **Cross-plan check**: if other plans exist in `.prism/plans/`, identify overlapping files and note dependencies
 - [ ] Required types/interfaces have the necessary fields?
 - [ ] External package APIs behave as expected?
 - [ ] Cross-package dependencies identified?
@@ -473,7 +477,7 @@ If any of these excuses come to mind, **that's a warning signal**. Stop and retu
 | "It worked in my head" | Run the test. Thought experiments don't count |
 | "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
 | "The plan says 0% so we start fresh" | Grep the codebase. Prior work may already exist |
-| "Other plans won't conflict" | Check `docs/plans/` for overlapping files |
+| "Other plans won't conflict" | Check `.prism/plans/` for overlapping files |
 | "Tests pass, so it must be correct" | Passing tests only prove what you tested. Check edge cases and negative cases |
 | "3 files is too few to decompose" | Depends on coupling. 2 files in a tightly-coupled legacy system may need decomposition |
 | "I already grasped the essence" | If the essence statement contains technology names, it's still at solution level |
@@ -491,6 +495,10 @@ Before declaring completion:
 3. **READ** — Check the output directly
 4. **CLAIM** — Only declare based on evidence
 <!-- PRISM:END -->
+
+
+
+
 
 
 

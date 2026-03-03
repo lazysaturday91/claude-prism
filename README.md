@@ -79,7 +79,13 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 
 **Quality gates** between phases prevent executing on broken baselines.
 
-**New in v1.2.5:**
+**New in v1.3.0:**
+- **`.prism/` brand directory** — config, version, and plans live under `.prism/` for brand visibility on GitHub
+- **Config is now committed** — `.prism/config.json` is tracked by git (no longer gitignored)
+- **Automatic migration** — `prism update` migrates from `.claude-prism.json` and `docs/plans/` seamlessly
+- **Backward-compatible** — plan-enforcement hook still checks `docs/plans/` as fallback
+
+**v1.2.5:**
 - **Analysis-only branch**: When no code change is needed, UNDERSTAND reports findings without entering DECOMPOSE/EXECUTE/CHECKPOINT
 - **Git-as-Memory**: Commits after each batch as rollback points; `git diff` summaries maintain context in long sessions
 - **Verification scoping**: Build check output filtered to changed files only — pre-existing errors are ignored
@@ -163,14 +169,17 @@ npx claude-prism init --dry-run    # Preview what would be installed
 ```
 your-project/
 ├── CLAUDE.md                    # EUDEC methodology injected
-├── .claude-prism.json           # Hook configuration
+├── .prism/
+│   ├── config.json              # Hook configuration (committed)
+│   ├── .version                 # Installed version (gitignored)
+│   ├── .gitignore               # Ignores .version
+│   └── plans/                   # Plan files (created during work)
 ├── .claude/
 │   ├── commands/claude-prism/   # 9 slash commands
 │   ├── hooks/                   # pre-tool.mjs, post-tool.mjs
 │   ├── rules/                   # commit-guard, test-tracker, plan-enforcement
 │   ├── lib/                     # Shared dependencies
 │   └── settings.json            # Hook registration
-└── docs/plans/                  # Plan files (created during work)
 
 ~/.claude/                       # (global install / HUD)
 ├── commands/claude-prism/       # 9 slash commands (--global)
@@ -180,7 +189,7 @@ your-project/
 
 ## Configuration
 
-Edit `.claude-prism.json`:
+Edit `.prism/config.json`:
 
 ```json
 {
@@ -234,6 +243,21 @@ prism hud disable                                  # Deactivate HUD statusline
 ## OMC Integration
 
 Prism auto-detects [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
+
+## Upgrading to v1.3.0
+
+v1.3.0 moves project files from scattered locations to a unified `.prism/` directory:
+
+```
+Before                          After
+.claude-prism.json (gitignored) → .prism/config.json (committed)
+.claude/.prism-version          → .prism/.version (gitignored)
+docs/plans/                     → .prism/plans/ (committed)
+```
+
+**Migration is automatic**: just run `prism update`. All files are moved, legacy paths are cleaned up, and the plan-enforcement hook falls back to `docs/plans/` for backward compatibility.
+
+After updating, you may want to `git add .prism/` to commit the new config and plans directory.
 
 ## Design Philosophy
 

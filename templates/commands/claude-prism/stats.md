@@ -4,10 +4,10 @@ When this command is invoked:
 
 ## Gather Information
 
-1. **Read `.claude-prism.json`** for:
+1. **Read `.prism/config.json`** for:
    - Language setting
    - Hook configurations and enabled status
-2. **Scan plan files** in `docs/plans/*.md`:
+2. **Scan plan files** in `.prism/plans/*.md`:
    - Count total files
    - For each plan, count `[x]` (done) vs `[ ]` (pending) tasks
    - Calculate completion percentage

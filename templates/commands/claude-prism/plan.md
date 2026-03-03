@@ -4,8 +4,8 @@ When this command is invoked:
 
 ## List Plans
 
-1. **Check** if `docs/plans/` exists. If not, report "No plans directory found. Create one with `/claude-prism:plan create <topic>`."
-2. **Scan** `docs/plans/` for all `.md` files
+1. **Check** if `.prism/plans/` exists. If not, report "No plans directory found. Create one with `/claude-prism:plan create <topic>`."
+2. **Scan** `.prism/plans/` for all `.md` files
 3. **Show each plan** with:
    - Filename and date
    - Goal (first line after `## Goal`)
@@ -17,7 +17,7 @@ When this command is invoked:
 If user requests a new plan:
 
 1. **Determine topic** from user's description
-2. **Create file** at `docs/plans/YYYY-MM-DD-<topic>.md`
+2. **Create file** at `.prism/plans/YYYY-MM-DD-<topic>.md`
 3. **Use EUDEC template**:
 
 ```

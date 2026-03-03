@@ -117,12 +117,25 @@ describe('cli init', () => {
     assert.ok(content.includes('<!-- PRISM:START -->'));
   });
 
-  it('creates .claude-prism.json config file', async () => {
+  it('creates .prism/config.json config file', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: true });
-    assert.ok(existsSync(join(projectDir, '.claude-prism.json')));
-    const config = JSON.parse(readFileSync(join(projectDir, '.claude-prism.json'), 'utf8'));
+    assert.ok(existsSync(join(projectDir, '.prism', 'config.json')));
+    const config = JSON.parse(readFileSync(join(projectDir, '.prism', 'config.json'), 'utf8'));
     assert.ok(config.hooks);
+  });
+
+  it('creates .prism/.version file', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    assert.ok(existsSync(join(projectDir, '.prism', '.version')));
+  });
+
+  it('creates .prism/.gitignore with .version entry', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: true });
+    const gitignore = readFileSync(join(projectDir, '.prism', '.gitignore'), 'utf8');
+    assert.ok(gitignore.includes('.version'));
   });
 
   it('merges settings.json preserving existing hooks', async () => {
@@ -246,9 +259,10 @@ describe('cli uninstall', () => {
     assert.ok(!existsSync(join(projectDir, '.claude', 'lib')));
   });
 
-  it('removes .claude-prism.json', async () => {
+  it('removes .prism/config.json and legacy .claude-prism.json', async () => {
     const { uninstall } = await import('../lib/installer.mjs');
     uninstall(projectDir);
+    assert.ok(!existsSync(join(projectDir, '.prism', 'config.json')));
     assert.ok(!existsSync(join(projectDir, '.claude-prism.json')));
   });
 
@@ -360,9 +374,9 @@ describe('cli update', () => {
     assert.ok(existsSync(join(nsDir, 'prism.md')));
   });
 
-  it('migrates legacy .prism.json to .claude-prism.json on update', async () => {
+  it('migrates legacy .prism.json to .prism/config.json on update', async () => {
     // Create a project with legacy .prism.json
-    rmSync(join(projectDir, '.claude-prism.json'));
+    rmSync(join(projectDir, '.prism', 'config.json'));
     writeFileSync(join(projectDir, '.prism.json'), JSON.stringify({
       hooks: { 'commit-guard': { enabled: true } }
     }));
@@ -370,13 +384,56 @@ describe('cli update', () => {
     const { update } = await import('../lib/installer.mjs');
     await update(projectDir);
 
-    // New config should exist
-    assert.ok(existsSync(join(projectDir, '.claude-prism.json')));
-    // Legacy should be gone (removed during update)
+    // New config should exist at .prism/config.json
+    assert.ok(existsSync(join(projectDir, '.prism', 'config.json')));
+    // Legacy should be gone
     assert.ok(!existsSync(join(projectDir, '.prism.json')));
     // Config should exist with hooks
-    const config = JSON.parse(readFileSync(join(projectDir, '.claude-prism.json'), 'utf8'));
+    const config = JSON.parse(readFileSync(join(projectDir, '.prism', 'config.json'), 'utf8'));
     assert.ok(config.hooks);
+  });
+
+  it('migrates legacy .claude-prism.json to .prism/config.json on update', async () => {
+    // Simulate legacy .claude-prism.json
+    rmSync(join(projectDir, '.prism', 'config.json'));
+    writeFileSync(join(projectDir, '.claude-prism.json'), JSON.stringify({
+      hooks: { 'commit-guard': { enabled: true } }
+    }));
+
+    const { update } = await import('../lib/installer.mjs');
+    await update(projectDir);
+
+    // New config should exist at .prism/config.json
+    assert.ok(existsSync(join(projectDir, '.prism', 'config.json')));
+    // Legacy should be gone
+    assert.ok(!existsSync(join(projectDir, '.claude-prism.json')));
+  });
+
+  it('migrates docs/plans/ to .prism/plans/ on update', async () => {
+    // Create legacy plans
+    mkdirSync(join(projectDir, 'docs', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, 'docs', 'plans', '2026-01-01-test.md'), '# Plan');
+
+    const { update } = await import('../lib/installer.mjs');
+    await update(projectDir);
+
+    // Plans should be in .prism/plans/
+    assert.ok(existsSync(join(projectDir, '.prism', 'plans', '2026-01-01-test.md')));
+    // Legacy dir should be cleaned up
+    assert.ok(!existsSync(join(projectDir, 'docs', 'plans')));
+  });
+
+  it('migrates .claude/.prism-version to .prism/.version on update', async () => {
+    // Create legacy version file
+    writeFileSync(join(projectDir, '.claude', '.prism-version'), '1.2.0');
+
+    const { update } = await import('../lib/installer.mjs');
+    await update(projectDir);
+
+    // Version should exist at new path
+    assert.ok(existsSync(join(projectDir, '.prism', '.version')));
+    // Legacy should be gone
+    assert.ok(!existsSync(join(projectDir, '.claude', '.prism-version')));
   });
 });
 
@@ -428,12 +485,12 @@ describe('cli doctor', () => {
     assert.ok(result.issues.some(i => i.includes('CLAUDE.md')));
   });
 
-  it('detects missing .claude-prism.json', async () => {
+  it('detects missing .prism/config.json', async () => {
     const { doctor } = await import('../lib/installer.mjs');
-    rmSync(join(projectDir, '.claude-prism.json'));
+    rmSync(join(projectDir, '.prism', 'config.json'));
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
-    assert.ok(result.issues.some(i => i.includes('.claude-prism.json')));
+    assert.ok(result.issues.some(i => i.includes('.prism/config.json')));
   });
 
   it('detects legacy flat commands that need migration', async () => {
@@ -458,12 +515,19 @@ describe('cli doctor', () => {
 
   it('detects legacy .prism.json and suggests migration', async () => {
     const { doctor } = await import('../lib/installer.mjs');
-    // Create legacy .prism.json alongside new .claude-prism.json
     writeFileSync(join(projectDir, '.prism.json'), JSON.stringify({ hooks: { 'commit-guard': { enabled: true } } }));
     const result = doctor(projectDir);
     assert.ok(!result.healthy);
     assert.ok(result.issues.some(i => i.includes('Legacy .prism.json')));
     assert.ok(result.fixes.some(f => f.includes('prism update')));
+  });
+
+  it('detects legacy .claude-prism.json and suggests migration', async () => {
+    const { doctor } = await import('../lib/installer.mjs');
+    writeFileSync(join(projectDir, '.claude-prism.json'), JSON.stringify({ hooks: { 'commit-guard': { enabled: true } } }));
+    const result = doctor(projectDir);
+    assert.ok(!result.healthy);
+    assert.ok(result.issues.some(i => i.includes('Legacy .claude-prism.json')));
   });
 });
 
@@ -498,7 +562,15 @@ describe('cli stats', () => {
     assert.match(result.version, /^\d+\.\d+\.\d+$/);
   });
 
-  it('counts plan files', async () => {
+  it('counts plan files in .prism/plans/', async () => {
+    const { stats } = await import('../lib/installer.mjs');
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+    writeFileSync(join(projectDir, '.prism', 'plans', '2026-01-01-test.md'), '# Plan');
+    const result = stats(projectDir);
+    assert.equal(result.planFiles, 1);
+  });
+
+  it('counts plan files in legacy docs/plans/ as fallback', async () => {
     const { stats } = await import('../lib/installer.mjs');
     mkdirSync(join(projectDir, 'docs', 'plans'), { recursive: true });
     writeFileSync(join(projectDir, 'docs', 'plans', '2026-01-01-test.md'), '# Plan');

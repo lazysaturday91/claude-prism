@@ -31,7 +31,8 @@ describe('config', () => {
 
   it('merges user config with defaults', async () => {
     const { loadConfig } = await import('../lib/config.mjs');
-    writeFileSync(join(tempDir, '.claude-prism.json'), JSON.stringify({
+    mkdirSync(join(tempDir, '.prism'), { recursive: true });
+    writeFileSync(join(tempDir, '.prism', 'config.json'), JSON.stringify({
       hooks: { 'commit-guard': { maxTestAge: 600 } }
     }));
     const config = loadConfig(tempDir);
@@ -41,14 +42,16 @@ describe('config', () => {
 
   it('returns defaults on malformed JSON', async () => {
     const { loadConfig } = await import('../lib/config.mjs');
-    writeFileSync(join(tempDir, '.claude-prism.json'), '{ broken json');
+    mkdirSync(join(tempDir, '.prism'), { recursive: true });
+    writeFileSync(join(tempDir, '.prism', 'config.json'), '{ broken json');
     const config = loadConfig(tempDir);
     assert.equal(config.hooks['commit-guard'].enabled, true);
   });
 
   it('blocks prototype pollution via __proto__', async () => {
     const { loadConfig } = await import('../lib/config.mjs');
-    writeFileSync(join(tempDir, '.claude-prism.json'), JSON.stringify({
+    mkdirSync(join(tempDir, '.prism'), { recursive: true });
+    writeFileSync(join(tempDir, '.prism', 'config.json'), JSON.stringify({
       '__proto__': { 'polluted': true }
     }));
     const config = loadConfig(tempDir);

@@ -340,7 +340,7 @@ Options:
   if (/EACCES|permission/i.test(msg)) {
     process.stderr.write('💡 Check directory permissions\n');
   } else if (/JSON|parse/i.test(msg)) {
-    process.stderr.write('💡 Config file may be corrupted. Try `prism reset` or delete .claude-prism.json\n');
+    process.stderr.write('💡 Config file may be corrupted. Try `prism reset` or delete .prism/config.json\n');
   } else if (/ENOENT.*package\.json/i.test(msg)) {
     process.stderr.write('💡 Not in a project directory?\n');
   }
