@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "1.5.0",
+  "version": "1.6.0-beta.1",
   "description": "AI agent harness implementing the EUDEC methodology — Essence, Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {

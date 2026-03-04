@@ -559,7 +559,7 @@ describe('cli stats', () => {
     const { stats } = await import('../lib/installer.mjs');
     const result = stats(projectDir);
     assert.ok(result.version);
-    assert.match(result.version, /^\d+\.\d+\.\d+$/);
+    assert.match(result.version, /^\d+\.\d+\.\d+/);
   });
 
   it('counts plan files in .prism/plans/', async () => {
@@ -849,5 +849,72 @@ describe('new hook installer paths', () => {
     rmSync(join(projectDir, '.claude', 'hooks', 'session-end.mjs'));
     const result = check(projectDir);
     assert.equal(result.hooks, false);
+  });
+});
+
+// ─── lean mode ───
+
+describe('lean mode', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-lean-'));
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('injects lean rules when rulesMode is lean', async () => {
+    // Set up lean config
+    const prismDir = join(projectDir, '.prism');
+    mkdirSync(prismDir, { recursive: true });
+    writeFileSync(join(prismDir, 'config.json'), JSON.stringify({ version: 1, rulesMode: 'lean' }));
+
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: false });
+
+    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
+    assert.ok(content.includes('Lean Mode'), 'CLAUDE.md should contain Lean Mode');
+    assert.ok(content.includes('<!-- PRISM:START -->'), 'Should have PRISM markers');
+  });
+
+  it('lean rules are shorter than full rules', async () => {
+    const { readFileSync: rfs } = await import('fs');
+    const { join: pjoin, dirname: pdir } = await import('path');
+    const { fileURLToPath: furl } = await import('url');
+    const dir = pdir(furl(import.meta.url));
+    const leanContent = rfs(pjoin(dir, '..', 'templates', 'rules-lean.md'), 'utf8');
+    const fullContent = rfs(pjoin(dir, '..', 'templates', 'rules.md'), 'utf8');
+    assert.ok(leanContent.length < fullContent.length, 'Lean rules should be shorter than full rules');
+  });
+
+  it('lean rules contain Scope Guard', async () => {
+    const { readFileSync: rfs } = await import('fs');
+    const { join: pjoin, dirname: pdir } = await import('path');
+    const { fileURLToPath: furl } = await import('url');
+    const dir = pdir(furl(import.meta.url));
+    const leanContent = rfs(pjoin(dir, '..', 'templates', 'rules-lean.md'), 'utf8');
+    assert.ok(leanContent.includes('Scope Guard'), 'Lean rules should contain Scope Guard');
+  });
+
+  it('lean rules direct to /prism slash command', async () => {
+    const { readFileSync: rfs } = await import('fs');
+    const { join: pjoin, dirname: pdir } = await import('path');
+    const { fileURLToPath: furl } = await import('url');
+    const dir = pdir(furl(import.meta.url));
+    const leanContent = rfs(pjoin(dir, '..', 'templates', 'rules-lean.md'), 'utf8');
+    assert.ok(leanContent.includes('claude-prism:prism'), 'Lean rules should reference /claude-prism:prism');
+  });
+
+  it('defaults to full when rulesMode not set', async () => {
+    // No .prism/config.json — defaults apply
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: false });
+
+    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
+    assert.ok(!content.includes('Lean Mode'), 'Should NOT contain Lean Mode when config absent');
+    assert.ok(content.includes('EUDEC Methodology Framework'), 'Should contain full methodology');
   });
 });

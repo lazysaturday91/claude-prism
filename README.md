@@ -246,10 +246,27 @@ Edit `.prism/config.json`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `version` | 1 | Config schema version (for future migrations) |
+| `rulesMode` | `"full"` | `"full"` injects the complete ~500-line EUDEC methodology; `"lean"` injects ~80-line behavioral modifiers and routes to `/claude-prism:prism` for full guidance |
 | `commit-guard.maxTestAge` | 300 | Seconds before test run is considered stale |
 | `plan-enforcement.warnAt` | 6 | Unique source file count that triggers plan warning |
 | `task-plan-sync.matchThreshold` | 0.3 | Keyword overlap ratio for fuzzy task matching |
 | `webhooks` | `[]` | HTTP endpoints for event notifications |
+
+### Lean Router (beta)
+
+By default, Prism injects the full EUDEC methodology (~500 lines) into `CLAUDE.md`. This provides passive absorption — the agent always has the complete framework in context.
+
+**Lean mode** injects only ~80 lines of behavioral modifiers (Scope Guard, Verification Ladder, Bugfix Fast Path, etc.) and routes Standard/Full tasks to the `/claude-prism:prism` slash command for on-demand full guidance. This saves context window for code.
+
+```bash
+# Switch to lean mode
+echo '{"version":1,"rulesMode":"lean"}' > .prism/config.json
+prism update
+
+# Switch back to full mode
+echo '{"version":1,"rulesMode":"full"}' > .prism/config.json
+prism update
+```
 
 ## CLI Commands
 
