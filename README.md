@@ -16,7 +16,12 @@
 
 # claude-prism
 
-**EUDEC methodology framework for AI coding agents.**
+**AI agent harness implementing the EUDEC methodology for reliable AI-assisted coding.**
+
+Prism is an [agent harness](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html) —
+the infrastructure that channels AI coding agents toward correct, verified output.
+It combines a behavioral methodology (EUDEC), deterministic hooks for enforcement,
+session lifecycle automation, and adaptive process weight that scales with task complexity.
 
 Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Seven hooks enforce the methodology and automate session management.
 
@@ -75,9 +80,15 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Medium risk** (new components, API integration): Build + runtime check
 - **Low risk** (imports, types, renaming): Build/lint passes
 - **No test infra** (legacy PHP, WordPress): Grep-based static check + syntax validation
-- Fallback: Automated Tests → Approval Testing → Build → Lint → Smoke Check → Manual Diff
+- Fallback Ladder: Tests → Build → Diff (use highest available)
 
 **Quality gates** between phases prevent executing on broken baselines.
+
+**v1.5.0:**
+- **Adaptive Weight**: EUDEC auto-scales — lightweight (1-2 files), standard, or full path
+- **Bugfix Fast Path**: symptom → cause → fix → verify (skips formal EUDEC cycle)
+- **Streamlined verification**: 3-level fallback ladder (Tests → Build → Diff)
+- **Adaptive checkpoints**: no pause for small tasks, summary for medium, full for large
 
 **New in v1.4.0:**
 - **Native Claude Code plugin** — `claude plugin install claude-prism` for zero-config setup

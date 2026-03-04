@@ -17,11 +17,21 @@ When this command is invoked, follow the EUDEC framework strictly:
 
    | Essence Character | Type | Path |
    |-------------------|------|------|
-   | "X is broken" | Bugfix | UNDERSTAND → locate → fix → verify |
+   | "X is broken" | Bugfix | Fast Path (below) |
    | "X should be possible" | Feature | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
    | "All X must become Y" | Migration | UNDERSTAND → pattern → batch apply → verify |
    | "X's structure must change" | Refactor | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
    | "Why does X happen?" | Investigation | explore → analyze → report |
+
+2b. **Adaptive Weight** — select EUDEC path by task size:
+
+   | Weight | Criteria | Path |
+   |--------|----------|------|
+   | **Lightweight** | 1-2 files, <50 LOC, clear scope | Essence (1 line) → Execute → Verify → Done |
+   | **Standard** | 3-5 files, 50-200 LOC | Full EUDEC, summary checkpoints |
+   | **Full** | 6+ files, 200+ LOC, or unclear scope | Full EUDEC with plan file + full checkpoints |
+
+   Lightweight skips formal UNDERSTAND and DECOMPOSE. Bugfix fast path (regardless of file count): reproduce → root cause → minimal fix → verify (skips ESSENCE/UNDERSTAND/DECOMPOSE entirely).
 
 ## U — UNDERSTAND
 
@@ -89,7 +99,7 @@ When this command is invoked, follow the EUDEC framework strictly:
     - **Medium risk** (new components with logic, API integration): Build + lint pass
     - **Low risk** (imports, types, style, renaming): Build/lint passes
     - **No test infra** (legacy PHP, WordPress, etc.): Grep-based static check + syntax validation
-    - Use **Verification Fallback Ladder**: Automated Tests → Approval Testing → Build → Lint → Smoke Check → Manual Diff Review (use highest available level)
+    - **Verification Fallback Ladder** (use highest available): Tests → Build → Diff
 21. **Scope Guard**: Before each change, ask: "Was this requested?" If no → don't do it
 22. **Goal Recitation**: At every batch boundary, re-read the plan and confirm: "Current work aligns with: [original goal]"
 23. **Self-correction triggers (Thrashing Detector)**:
@@ -124,7 +134,7 @@ When this command is invoked, follow the EUDEC framework strictly:
 
 28. **Plan-Reality sync**: Grep for plan targets, mark vanished targets as "already completed", add newly discovered targets.
 29. Include: verification results, files modified, tests status
-30. **Checkpoint policy**: after 3 consecutive approvals, increase batch size to 5-8 for the rest of the phase
+30. **Checkpoint policy** (proportional to weight): Lightweight — no pause, report with evidence. Standard — summary (1-2 lines). Full — full dashboard + "Continue?"
 31. Ask: "Continue to next batch?"
 32. User can redirect, adjust scope, or stop at any checkpoint
 

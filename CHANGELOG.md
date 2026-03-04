@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] — 2026-03-04
+
+### Changed
+- **Adaptive Weight routing** — EUDEC path auto-scales by task size (Lightweight/Standard/Full)
+- **Bugfix Fast Path** — 4-step lightweight path: symptom → cause → fix → verify (skips formal EUDEC)
+- **Verification Fallback Ladder** simplified from 6 levels to 3 (Tests/Build/Diff)
+- **Adaptive checkpoints** — frequency proportional to task weight (no pause for lightweight)
+- **Rationalization Defense** compressed from 17 to 4 highest-impact items
+- Section numbering corrected (4-8 moved after 4-7)
+- Package description and keywords updated with "agent harness" positioning
+
 ## [1.4.0] — 2026-03-03
 
 ### Added

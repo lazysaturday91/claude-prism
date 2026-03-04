@@ -39,7 +39,7 @@ The task type naturally emerges from the essence:
 
 | Essence Character | Type | Path |
 |-------------------|------|------|
-| "X is broken" | Bugfix | UNDERSTAND → locate → fix → verify |
+| "X is broken" | Bugfix | Fast Path (1-5) |
 | "X should be possible" | Feature | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
 | "All X must become Y" | Migration | UNDERSTAND → pattern → batch apply → verify |
 | "X's structure must change" | Refactor | UNDERSTAND → DECOMPOSE → EXECUTE → CHECKPOINT |
@@ -65,6 +65,26 @@ Before moving to UNDERSTAND, verify:
 - [ ] Minimal case is truly "minimal" (can it be reduced further?)
 - [ ] Each step in the expansion path works independently
 - [ ] Task type has been clearly derived
+
+### 1-5. Adaptive Weight (Task Size Routing)
+
+After extracting essence and task type, assess task weight to select the appropriate EUDEC path:
+
+| Weight | Criteria | Path |
+|--------|----------|------|
+| **Lightweight** | 1-2 files, <50 LOC, clear scope | Essence (1 line) → Execute → Verify → Done |
+| **Standard** | 3-5 files, 50-200 LOC | Full EUDEC, summary checkpoints |
+| **Full** | 6+ files, 200+ LOC, or unclear scope | Full EUDEC with plan file + full checkpoints |
+
+**Lightweight path** skips formal UNDERSTAND (sufficiency assessment, question rounds, alignment confirmation) and DECOMPOSE. The essence statement still grounds the work but takes one line, not a full section.
+
+**Bugfix fast path** (regardless of file count):
+1. Reproduce the symptom
+2. Trace to root cause
+3. Minimal fix (smallest change that resolves the cause)
+4. Verify (test/build/diff)
+
+Bugfixes skip ESSENCE extraction, UNDERSTAND ceremony, and DECOMPOSE entirely. The 4-step debugging protocol (4-3) is the complete path.
 
 ---
 
@@ -247,14 +267,11 @@ Choose verification proportional to the **risk of the change**, not the file pat
 
 **Verification Fallback Ladder** (use highest available level):
 
-| Level | Method | Tools Required |
-|-------|--------|---------------|
-| 1. Automated Tests | TDD / unit / integration | Test runner |
-| 2. Approval Testing | Capture output before, diff after | diff, shell |
-| 3. Build Verification | Compiles without errors | Build tool |
-| 4. Lint/Static Analysis | No new warnings | Linter |
-| 5. Smoke Check | App starts, key routes respond | curl, browser |
-| 6. Manual Diff Review | `git diff` reviewed for regressions | git |
+| Level | Method | When |
+|-------|--------|------|
+| 1. Tests | Automated tests (unit, integration, e2e) | Test infrastructure exists |
+| 2. Build | Compiles + lint without new errors | No tests for this area |
+| 3. Diff | `git diff` reviewed for regressions | No build tooling |
 
 **Every change must have SOME verification.** If no tooling exists, `git diff` review is the minimum.
 
@@ -327,13 +344,6 @@ When delegating work to sub-agents:
 
 **Never mark a delegated task as complete without reading the actual file state.**
 
-### 4-8. Checkpoint Integration
-
-Claude Code creates automatic checkpoints on every edit. Use `Esc+Esc` or `/rewind` to restore.
-- Before risky changes: checkpoint exists automatically
-- After failed batch: consider `/rewind` to restore clean state before retry
-- Checkpoints complement Git-as-Memory: git for cross-session, checkpoints for intra-session
-
 ### 4-7. Project-Type Verification Examples
 
 | Project Type | Syntax Check | Smoke Test | Approval Test |
@@ -342,6 +352,13 @@ Claude Code creates automatic checkpoints on every edit. Use `Esc+Esc` or `/rewi
 | **Static Sites** | Build completes | Link checker, visual diff of HTML | Compare output directory before/after |
 | **Scripts/CLI** | Language syntax check | Run with known inputs, compare outputs | Capture stdout before/after |
 | **Infra/Config** | `terraform plan`, `docker build` | Dry-run deploy | Compare plan output before/after |
+
+### 4-8. Checkpoint Integration
+
+Claude Code creates automatic checkpoints on every edit. Use `Esc+Esc` or `/rewind` to restore.
+- Before risky changes: checkpoint exists automatically
+- After failed batch: consider `/rewind` to restore clean state before retry
+- Checkpoints complement Git-as-Memory: git for cross-session, checkpoints for intra-session
 
 ---
 
@@ -373,10 +390,12 @@ After each batch:
 3. If new targets discovered → add to plan's "Risks / Open Questions"
 4. Update plan file's `Codebase Audit` section with fresh counts
 
-**Checkpoint frequency:**
-- **Phase boundary**: always stop (mandatory)
-- **Batch boundary**: stop by default → after 3 consecutive approvals, increase batch size for the remainder
-- **Blocker encountered**: always stop (mandatory)
+**Checkpoint frequency** (proportional to task weight):
+- **Lightweight tasks**: no checkpoint pause — report completion with evidence
+- **Standard tasks**: summary checkpoint (1-2 lines: what done, verification result, next)
+- **Full tasks**: full checkpoint with progress dashboard + "Continue?"
+- **Phase boundary**: always stop (mandatory, all weights)
+- **Blocker encountered**: always stop (mandatory, all weights)
 
 **Progress dashboard:**
 ```
@@ -456,27 +475,14 @@ When a session starts:
 
 ## 7. Rationalization Defense
 
-If any of these excuses come to mind, **that's a warning signal**. Stop and return to principles:
+If any of these come to mind, **stop and return to principles**:
 
 | Excuse | Reality |
 |--------|---------|
-| "Too simple to decompose" | 3+ files = always decompose (unless migration type) |
-| "Don't want to bother the user" | If vague, must ask. No guessing |
-| "I'll add tests later" | Tests come first for high-risk changes |
-| "Just this once" | No exceptions |
-| "User said to proceed" | One approval ≠ unlimited delegation |
 | "I know what they mean" | Verify. Assumption is the root of all bugs |
-| "While I'm here, let me also..." | Scope creep. Stay on task |
-| "This is close enough" | Close ≠ correct. Verify precisely |
-| "It worked in my head" | Run the test. Thought experiments don't count |
-| "The existing code is messy anyway" | Fix what was asked. Note the rest for later |
-| "The plan says 0% so we start fresh" | Grep the codebase. Prior work may already exist |
-| "Other plans won't conflict" | Check `.prism/plans/` for overlapping files |
-| "Tests pass, so it must be correct" | Passing tests only prove what you tested. Check edge cases and negative cases |
-| "3 files is too few to decompose" | Depends on coupling. 2 files in a tightly-coupled legacy system may need decomposition |
-| "I already grasped the essence" | If the essence statement contains technology names, it's still at solution level |
-| "No need to simplify, just implement" | Starting without a minimal case drowns you in complexity |
-| "Expansion path can wait" | Without expansion direction, the minimal case becomes a dead end |
+| "While I'm here, let me also..." | Scope creep. Note it for later, stay on task |
+| "Too simple to decompose" | Check file count and coupling. Simple ≠ small |
+| "I'll add tests later" | High-risk changes: tests come first. No exceptions |
 
 ## 8. Completion Declaration Rules
 

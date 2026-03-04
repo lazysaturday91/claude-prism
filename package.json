@@ -1,7 +1,7 @@
 {
   "name": "claude-prism",
-  "version": "1.4.0",
-  "description": "EUDEC methodology framework for AI coding agents — Essence, Understand, Decompose, Execute, Checkpoint.",
+  "version": "1.5.0",
+  "description": "AI agent harness implementing the EUDEC methodology — Essence, Understand, Decompose, Execute, Checkpoint.",
   "type": "module",
   "bin": {
     "prism": "./bin/cli.mjs"
@@ -21,7 +21,11 @@
     "claude-code-hooks",
     "udec",
     "eudec",
-    "ai-agent"
+    "ai-agent",
+    "harness-engineering",
+    "agent-harness",
+    "ai-harness",
+    "context-engineering"
   ],
   "engines": {
     "node": ">=18"
