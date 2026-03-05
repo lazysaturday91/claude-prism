@@ -44,9 +44,11 @@ switch (command) {
 
     const hooks = !hasFlag('no-hooks');
 
+    const docs = hasFlag('docs');
+
     if (hasFlag('dry-run')) {
       const { dryRun } = await import('../lib/installer.mjs');
-      const result = dryRun(cwd, { hooks });
+      const result = dryRun(cwd, { hooks, docs });
       console.log('🌈 claude-prism init --dry-run\n');
       console.log('  Files that would be created/updated:\n');
       for (const action of result.actions) {
@@ -58,7 +60,7 @@ switch (command) {
     }
 
     console.log('🌈 claude-prism init\n');
-    await init(cwd, { hooks });
+    await init(cwd, { hooks, docs });
 
     console.log('✅ EUDEC methodology → CLAUDE.md');
     console.log('✅ Commands → /prism, /checkpoint, /plan');
@@ -66,6 +68,10 @@ switch (command) {
       console.log('✅ Commit guard → blocks commits with failing tests');
     } else {
       console.log('⏭️  Hooks skipped (--no-hooks)');
+    }
+    if (docs) {
+      console.log('✅ Docs scaffolding → docs/PROJECT-MEMORY.md, docs/HANDOFF.md');
+      console.log('✅ Registry → .prism/registry.json');
     }
 
     // HUD prompt — only ask interactively if not already installed and no flag given
@@ -308,7 +314,7 @@ switch (command) {
     console.log(`🌈 claude-prism — EUDEC methodology framework for AI coding agents
 
 Usage:
-  prism init [--no-hooks]                Install prism in current project
+  prism init [--no-hooks] [--docs]       Install prism in current project
   prism init --global                    Install globally (~/.claude/) + OMC skill
   prism check [--ci]                     Verify installation
   prism doctor                           Diagnose issues with fix suggestions
@@ -325,6 +331,7 @@ Usage:
 
 Options:
   --no-hooks   Skip commit guard hook
+  --docs       Create docs/ scaffolding (PROJECT-MEMORY.md, HANDOFF.md, registry.json)
   --hud        Auto-enable HUD during init (no prompt)
   --no-hud     Skip HUD prompt during init
   --dry-run    Show what init would do without making changes

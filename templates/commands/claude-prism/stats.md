@@ -30,7 +30,7 @@ When this command is invoked:
     ✅ scope-guard    (warn: 4/8, block: 7/12)
 
   Plans:
-    📋 2026-02-15-p3-inspector.md    [3/5] 60%
-    📋 2026-02-15-p8-templates.md    [5/5] 100% ✅
-    📋 2026-02-16-p4-token.md        [0/4] 0%
+    📋 2026-02-15-p3-inspector.md    [3/5] 60%  (active)
+    ✅ 2026-02-15-p8-templates.md    [5/5] 100% (completed)
+    🚫 2026-02-16-p4-token.md        [0/4] 0%  (blocked)
 ```

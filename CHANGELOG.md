@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] — 2026-03-05
+
+### Added
+- **Session Bootstrap** — `<!-- PRISM:BOOT -->` block auto-injected into CLAUDE.md; instructs agents to read `docs/PROJECT-MEMORY.md`, `docs/HANDOFF.md`, active plans, and `.prism/registry.json` on session start
+- **Plan Frontmatter** — plans support YAML frontmatter (`status`, `created`, `depends_on`); `/plan list` shows status icons (📋 active, ✅ completed, 📦 archived, 🚫 blocked)
+- **Plan Check** — `/plan check` subcommand detects file overlaps across active plans (cross-plan conflict detection)
+- **Docs Scaffolding** — `prism init --docs` creates `docs/` structure with `PROJECT-MEMORY.md`, `HANDOFF.md` templates and `.prism/registry.json` (auto-scans existing docs)
+- **Project Registry** — `.prism/registry.json` catalogs SSOT documents, session files, and reference/archive paths
+- **Lightweight Recording** — lightweight tasks now record a 1-line summary to `docs/PROJECT-MEMORY.md`
+- **HANDOFF Auto-triggers** — rules.md documents PreCompact/SessionEnd hook auto-generation of HANDOFF.md
+
+### Changed
+- `getActivePlanInfo()` now filters by frontmatter `status: active` (backward-compatible: no frontmatter = active)
+- `dryRun()` shows docs scaffolding actions when `--docs` is used
+- `stats.md` plan list shows frontmatter status icons
+- `rules-lean.md` Session Handoff section updated with auto-generation info
+
+### New exports
+- `parseFrontmatter(content)` — parse YAML-like frontmatter from markdown
+- `getAllPlans(projectRoot)` — list all plans with frontmatter + progress info merged
+- `detectPlanConflicts(projectRoot)` — find file overlaps across active plans
+
 ## [1.6.0-beta.1] — 2026-03-04
 
 ### Added

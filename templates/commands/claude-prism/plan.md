@@ -6,11 +6,17 @@ When this command is invoked:
 
 1. **Check** if `.prism/plans/` exists. If not, report "No plans directory found. Create one with `/claude-prism:plan create <topic>`."
 2. **Scan** `.prism/plans/` for all `.md` files
-3. **Show each plan** with:
-   - Filename and date
+3. **Parse frontmatter** for each plan (between `---` markers at file start):
+   - `status: active` → 📋
+   - `status: completed` → ✅
+   - `status: archived` → 📦
+   - `status: blocked` → 🚫
+   - No frontmatter → 📋 (default: active)
+4. **Show each plan** with:
+   - Status icon, filename and date
    - Goal (first line after `## Goal`)
    - Progress: count [x] vs [ ] tasks
-   - Status: Complete / In Progress / Not Started
+   - Frontmatter status + task-based progress
 
 ## Create New Plan
 
@@ -18,9 +24,15 @@ If user requests a new plan:
 
 1. **Determine topic** from user's description
 2. **Create file** at `.prism/plans/YYYY-MM-DD-<topic>.md`
-3. **Use EUDEC template**:
+3. **Use EUDEC template** (with frontmatter):
 
 ```
+---
+status: active
+created: YYYY-MM-DD
+depends_on: []
+---
+
 ## Goal
 One sentence: what we're building and why.
 
@@ -52,6 +64,20 @@ Tech stack, key decisions, 2-3 sentences max.
 ```
 
 4. **Announce**: "Plan file created. Use /claude-prism:prism to start execution."
+
+## Check (file overlap detection)
+
+If user requests a conflict check:
+
+1. **Read all active plans** from `.prism/plans/` (frontmatter `status: active` or no frontmatter)
+2. **Parse "Files in Scope"** section from each plan — extract backtick-wrapped file paths
+3. **Detect file overlaps** across plans
+4. **Report**:
+   - ⚠️ File overlap: `path/to/file`
+     ← plan-a.md (active)
+     ← plan-b.md (active)
+   - Recommendation: check dependency order or merge plans
+5. If no overlaps found: "✅ No file conflicts across active plans."
 
 ## View Specific Plan
 

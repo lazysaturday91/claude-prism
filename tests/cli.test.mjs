@@ -852,6 +852,166 @@ describe('new hook installer paths', () => {
   });
 });
 
+// ─── session bootstrap ───
+
+describe('session bootstrap', () => {
+  it('boot block exists in rules.md', () => {
+    const content = readFileSync(join(process.cwd(), 'templates', 'rules.md'), 'utf8');
+    assert.ok(content.includes('<!-- PRISM:BOOT -->'));
+    assert.ok(content.includes('<!-- PRISM:BOOT:END -->'));
+  });
+
+  it('boot block exists in rules-lean.md', () => {
+    const content = readFileSync(join(process.cwd(), 'templates', 'rules-lean.md'), 'utf8');
+    assert.ok(content.includes('<!-- PRISM:BOOT -->'));
+    assert.ok(content.includes('<!-- PRISM:BOOT:END -->'));
+  });
+
+  it('boot block references PROJECT-MEMORY.md and HANDOFF.md', () => {
+    const content = readFileSync(join(process.cwd(), 'templates', 'rules.md'), 'utf8');
+    const bootBlock = content.slice(content.indexOf('<!-- PRISM:BOOT -->'), content.indexOf('<!-- PRISM:BOOT:END -->'));
+    assert.ok(bootBlock.includes('PROJECT-MEMORY.md'));
+    assert.ok(bootBlock.includes('HANDOFF.md'));
+    assert.ok(bootBlock.includes('registry.json'));
+  });
+});
+
+// ─── plan frontmatter ───
+
+describe('plan frontmatter', () => {
+  it('parseFrontmatter parses basic frontmatter', async () => {
+    const { parseFrontmatter } = await import('../lib/handoff.mjs');
+    const fm = parseFrontmatter('---\nstatus: active\ncreated: 2026-03-05\n---\n# Plan');
+    assert.equal(fm.status, 'active');
+    assert.equal(fm.created, '2026-03-05');
+  });
+
+  it('parseFrontmatter returns empty object when no frontmatter', async () => {
+    const { parseFrontmatter } = await import('../lib/handoff.mjs');
+    const fm = parseFrontmatter('# Plan\nNo frontmatter here');
+    assert.deepEqual(fm, {});
+  });
+
+  it('parseFrontmatter parses depends_on array', async () => {
+    const { parseFrontmatter } = await import('../lib/handoff.mjs');
+    const fm = parseFrontmatter('---\nstatus: active\ndepends_on: ["plan-a.md"]\n---\n# Plan');
+    assert.deepEqual(fm.depends_on, ['plan-a.md']);
+  });
+
+  it('getAllPlans returns plans with frontmatter merged', async () => {
+    const { getAllPlans } = await import('../lib/handoff.mjs');
+    const projectDir = mkdtempSync(join(tmpdir(), 'prism-plans-'));
+    const plansDir = join(projectDir, '.prism', 'plans');
+    mkdirSync(plansDir, { recursive: true });
+    writeFileSync(join(plansDir, '2026-03-01-test.md'), '---\nstatus: active\n---\n## Goal\nTest plan\n- [ ] Task 1');
+    writeFileSync(join(plansDir, '2026-03-02-done.md'), '---\nstatus: completed\n---\n## Goal\nDone plan\n- [x] Task 1');
+
+    const plans = getAllPlans(projectDir);
+    assert.equal(plans.length, 2);
+    const active = plans.find(p => p.status === 'active');
+    assert.ok(active);
+    const completed = plans.find(p => p.status === 'completed');
+    assert.ok(completed);
+
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('getActivePlanInfo filters by active status', async () => {
+    const { getActivePlanInfo } = await import('../lib/handoff.mjs');
+    const projectDir = mkdtempSync(join(tmpdir(), 'prism-plans-'));
+    const plansDir = join(projectDir, '.prism', 'plans');
+    mkdirSync(plansDir, { recursive: true });
+    writeFileSync(join(plansDir, '2026-03-05-completed.md'), '---\nstatus: completed\n---\n## Goal\nDone\n- [x] Task 1');
+    writeFileSync(join(plansDir, '2026-03-01-active.md'), '---\nstatus: active\n---\n## Goal\nActive\n- [ ] Task 1');
+
+    const info = getActivePlanInfo(projectDir);
+    assert.ok(info);
+    assert.equal(info.planName, '2026-03-01-active.md');
+
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+});
+
+// ─── docs scaffolding ───
+
+describe('docs scaffolding', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-docs-'));
+    writeFileSync(join(projectDir, 'CLAUDE.md'), '# Project\n');
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('init --docs creates docs structure', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: false, docs: true });
+    assert.ok(existsSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md')));
+    assert.ok(existsSync(join(projectDir, 'docs', 'HANDOFF.md')));
+    assert.ok(existsSync(join(projectDir, 'docs', 'reference')));
+    assert.ok(existsSync(join(projectDir, 'docs', 'archive')));
+  });
+
+  it('init --docs creates registry.json', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    await init(projectDir, { hooks: false, docs: true });
+    const registryPath = join(projectDir, '.prism', 'registry.json');
+    assert.ok(existsSync(registryPath));
+    const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+    assert.ok(registry.session);
+    assert.equal(registry.session.handoff, 'docs/HANDOFF.md');
+    assert.equal(registry.session.memory, 'docs/PROJECT-MEMORY.md');
+  });
+
+  it('init --docs preserves existing files', async () => {
+    const { init } = await import('../lib/installer.mjs');
+    mkdirSync(join(projectDir, 'docs'), { recursive: true });
+    writeFileSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md'), '# Existing Memory\n');
+    await init(projectDir, { hooks: false, docs: true });
+    const content = readFileSync(join(projectDir, 'docs', 'PROJECT-MEMORY.md'), 'utf8');
+    assert.ok(content.includes('Existing Memory'));
+  });
+});
+
+// ─── cross-plan conflicts ───
+
+describe('cross-plan conflicts', () => {
+  it('detects overlapping files across plans', async () => {
+    const { detectPlanConflicts } = await import('../lib/handoff.mjs');
+    const projectDir = mkdtempSync(join(tmpdir(), 'prism-conflict-'));
+    const plansDir = join(projectDir, '.prism', 'plans');
+    mkdirSync(plansDir, { recursive: true });
+
+    writeFileSync(join(plansDir, '2026-03-01-plan-a.md'), '---\nstatus: active\n---\n## Files in Scope\n- `src/auth.ts` — changes\n- `src/api.ts` — changes\n');
+    writeFileSync(join(plansDir, '2026-03-02-plan-b.md'), '---\nstatus: active\n---\n## Files in Scope\n- `src/auth.ts` — different changes\n- `src/db.ts` — changes\n');
+
+    const conflicts = detectPlanConflicts(projectDir);
+    assert.equal(conflicts.length, 1);
+    assert.equal(conflicts[0].file, 'src/auth.ts');
+    assert.equal(conflicts[0].plans.length, 2);
+
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('returns empty when files do not overlap', async () => {
+    const { detectPlanConflicts } = await import('../lib/handoff.mjs');
+    const projectDir = mkdtempSync(join(tmpdir(), 'prism-conflict-'));
+    const plansDir = join(projectDir, '.prism', 'plans');
+    mkdirSync(plansDir, { recursive: true });
+
+    writeFileSync(join(plansDir, '2026-03-01-plan-a.md'), '---\nstatus: active\n---\n## Files in Scope\n- `src/auth.ts` — changes\n');
+    writeFileSync(join(plansDir, '2026-03-02-plan-b.md'), '---\nstatus: active\n---\n## Files in Scope\n- `src/db.ts` — changes\n');
+
+    const conflicts = detectPlanConflicts(projectDir);
+    assert.equal(conflicts.length, 0);
+
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+});
+
 // ─── lean mode ───
 
 describe('lean mode', () => {

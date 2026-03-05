@@ -90,6 +90,12 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Streamlined verification**: 3-level fallback ladder (Tests → Build → Diff)
 - **Adaptive checkpoints**: no pause for small tasks, summary for medium, full for large
 
+**New in v1.6.0:**
+- **Session Bootstrap** — agents auto-read `PROJECT-MEMORY.md`, `HANDOFF.md`, active plans, and registry on session start
+- **Plan Lifecycle** — frontmatter (`status`, `created`, `depends_on`), `/plan check` for cross-plan file conflict detection
+- **Docs Scaffolding** — `prism init --docs` creates `docs/` with templates + `.prism/registry.json`
+- **Lightweight Recording** — even small tasks append a 1-line summary to `docs/PROJECT-MEMORY.md`
+
 **New in v1.4.0:**
 - **Native Claude Code plugin** — `claude plugin install claude-prism` for zero-config setup
 - **4 new hook events** — PreCompact (auto-HANDOFF), SessionEnd (session protection), SubagentStart (scope injection), TaskCompleted (plan auto-update)
@@ -187,6 +193,7 @@ Plugin mode auto-registers hooks and skills. Run `prism init` additionally if yo
 
 ```bash
 npx claude-prism init              # Install with hooks (prompts for HUD)
+npx claude-prism init --docs       # Install + docs scaffolding (PROJECT-MEMORY, HANDOFF, registry)
 npx claude-prism init --hud        # Install + auto-enable HUD
 npx claude-prism init --no-hooks   # Methodology only, no hooks
 npx claude-prism init --global     # Global skill (all projects)
@@ -271,7 +278,7 @@ prism update
 ## CLI Commands
 
 ```bash
-prism init [--no-hooks] [--global] [--dry-run]   # Install
+prism init [--no-hooks] [--docs] [--global] [--dry-run]  # Install
 prism init --hud                                   # Install + auto-enable HUD
 prism check [--ci]                                 # Verify installation
 prism doctor                                       # Diagnose issues

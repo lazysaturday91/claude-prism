@@ -1,6 +1,6 @@
 {
   "name": "claude-prism",
-  "version": "1.6.0-beta.1",
+  "version": "1.6.0",
   "description": "AI agent harness implementing the EUDEC methodology",
   "author": { "name": "lazysaturday91" },
   "repository": "https://github.com/lazysaturday91/claude-prism",
