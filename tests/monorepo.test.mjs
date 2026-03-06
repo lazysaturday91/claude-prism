@@ -6,8 +6,11 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { tmpdir } from 'os';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── findProjectRoot ───
 
@@ -114,7 +117,7 @@ describe('runner files use findProjectRoot', () => {
     const name = runner.split('/').pop();
 
     it(`${name} imports findProjectRoot`, () => {
-      const content = readFileSync(join(import.meta.dirname, '..', runner), 'utf8');
+      const content = readFileSync(join(__dirname, '..', runner), 'utf8');
       assert.ok(
         content.includes('findProjectRoot'),
         `${name} should import findProjectRoot`
@@ -122,7 +125,7 @@ describe('runner files use findProjectRoot', () => {
     });
 
     it(`${name} does not call loadConfig(process.cwd())`, () => {
-      const content = readFileSync(join(import.meta.dirname, '..', runner), 'utf8');
+      const content = readFileSync(join(__dirname, '..', runner), 'utf8');
       assert.ok(
         !content.includes('loadConfig(process.cwd())'),
         `${name} should not use loadConfig(process.cwd()) directly`
@@ -136,7 +139,7 @@ describe('runner files use findProjectRoot', () => {
 describe('pipeline.mjs uses findProjectRoot', () => {
   it('imports findProjectRoot from config.mjs', () => {
     const content = readFileSync(
-      join(import.meta.dirname, '..', 'lib', 'pipeline.mjs'),
+      join(__dirname, '..', 'lib', 'pipeline.mjs'),
       'utf8'
     );
     assert.ok(content.includes('findProjectRoot'));
@@ -144,7 +147,7 @@ describe('pipeline.mjs uses findProjectRoot', () => {
 
   it('does not use loadConfig(process.cwd())', () => {
     const content = readFileSync(
-      join(import.meta.dirname, '..', 'lib', 'pipeline.mjs'),
+      join(__dirname, '..', 'lib', 'pipeline.mjs'),
       'utf8'
     );
     assert.ok(
