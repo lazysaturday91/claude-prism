@@ -194,6 +194,11 @@ Save multi-step plans (6+ files) as markdown:
 - **Path**: `.prism/plans/YYYY-MM-DD-<topic>.md`
 
 ```markdown
+---
+status: draft
+created: YYYY-MM-DD
+---
+
 ## Goal
 One sentence: what we're building and why.
 
