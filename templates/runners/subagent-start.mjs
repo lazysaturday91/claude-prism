@@ -5,11 +5,13 @@
  */
 import { readFileSync } from 'fs';
 import { scopeInjector } from '../rules/subagent-scope-injector.mjs';
-import { loadConfig } from '../lib/config.mjs';
+import { loadConfig, findProjectRoot } from '../lib/config.mjs';
 
 try {
   const input = JSON.parse(readFileSync(0, 'utf8'));
-  const config = loadConfig(process.cwd());
+  const projectRoot = findProjectRoot(input.cwd || process.cwd());
+  const config = loadConfig(projectRoot);
+  config.projectRoot = projectRoot;
   const result = scopeInjector.evaluate(input, config);
   if (result) {
     process.stdout.write(JSON.stringify(result));

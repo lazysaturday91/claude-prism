@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] — 2026-03-06
+
+### Fixed
+- **Monorepo hook compatibility** — hooks now use `input.cwd` from Claude Code instead of `process.cwd()` to resolve the correct project root
+- `findProjectRoot()` upward search for nearest `.prism/config.json` — prevents wrong config in monorepo setups
+- `config.projectRoot` injection for all hook rules — existing `config.projectRoot || process.cwd()` fallbacks now receive the correct value
+- All 4 template runners (`precompact`, `session-end`, `subagent-start`, `task-completed`) updated to use `findProjectRoot(input.cwd)`
+- `pipeline.mjs` — `runPipeline()`, `runPipelineAsync()`, `loadCustomRules()` all resolve project root from hook input
+
 ## [1.7.0] — 2026-03-06
 
 ### Added
