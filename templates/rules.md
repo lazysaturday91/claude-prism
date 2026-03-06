@@ -323,6 +323,7 @@ Choose verification proportional to the **risk of the change**, not the file pat
 - Adding workarounds to fix workarounds → "Design problem. Step back."
 - Copy-pasting similar code 3+ times → "Need abstraction? Ask user."
 - Dependency version mismatch detected → "Resolve before continuing."
+- Plan file checkboxes not updated after batch → "Update plan checkboxes and frontmatter before continuing"
 
 **Goal Recitation** (prevents drift in long sessions):
 - At every batch boundary, re-read the plan file and confirm: "Current work aligns with: [original goal]"

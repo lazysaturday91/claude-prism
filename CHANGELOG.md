@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] — 2026-03-06
+
+### Added
+- **Plan progress auto-tracking** — `PostToolUse [Edit|Write]` hook tracks file-level progress against active plan's "Files in Scope"
+- `plan-progress-tracker` rule: matches edited files to scoped files, records milestones (25/50/75%), auto-transitions `draft → active` on first edit
+- `PostToolUse [Edit|Write]` event matcher added to `settings.json` — enables hooks on file edits, not just Bash commands
+- `parseScopedFiles(content)` in `plan-lifecycle.mjs` — extracts file paths from "Files in Scope" section
+- `ensureFrontmatter(planPath, content)` in `plan-lifecycle.mjs` — auto-backfills frontmatter for plans without status (derives from checkbox progress)
+- Self-Correction Trigger: "Plan file checkboxes not updated after batch"
+- 27 new tests covering parseScopedFiles, ensureFrontmatter, plan-progress-tracker, and regression guards
+
+### Fixed
+- `mergeSettings()` now compares both command and matcher — prevents skipping new matchers for existing hook commands during `prism update`
+
 ## [1.7.2] — 2026-03-06
 
 ### Fixed
