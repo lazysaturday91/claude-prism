@@ -60,7 +60,7 @@ claude-prism v1.0.0 출시: 문서 정합성 + 테스트 커버리지 + Analytic
 ## Batch 6: 최종 검증 + 출시
 - [ ] V1: [S] 전체 테스트 통과 확인 | Verify: TDD
 - [ ] V2: [S] CLAUDE.md sync (templates/rules.md → CLAUDE.md) | Verify: Build
-- [ ] V3: [S] version bump to 1.0.0 | Verify: Build
+- [x] V3: [S] version bump to 1.0.0 | Verify: Build
 - [ ] V4: 사용자 확인 후 push + npm publish | Verify: Manual
 
 ## Risks / Open Questions

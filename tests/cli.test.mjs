@@ -802,11 +802,11 @@ describe('new hook installer paths', () => {
     }
   });
 
-  it('init installs all 8 lib files', async () => {
+  it('init installs all 9 lib files', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: true });
     const libDir = join(projectDir, '.claude', 'lib');
-    for (const lib of ['state.mjs', 'config.mjs', 'utils.mjs', 'messages.mjs', 'pipeline.mjs', 'session.mjs', 'handoff.mjs', 'webhook.mjs']) {
+    for (const lib of ['state.mjs', 'config.mjs', 'utils.mjs', 'messages.mjs', 'pipeline.mjs', 'session.mjs', 'handoff.mjs', 'webhook.mjs', 'plan-lifecycle.mjs']) {
       assert.ok(existsSync(join(libDir, lib)), `${lib} should be installed`);
     }
   });
@@ -1076,5 +1076,71 @@ describe('lean mode', () => {
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
     assert.ok(!content.includes('Lean Mode'), 'Should NOT contain Lean Mode when config absent');
     assert.ok(content.includes('EUDEC Methodology Framework'), 'Should contain full methodology');
+  });
+});
+
+// ─── plan lifecycle hook integration ───
+
+describe('plan lifecycle hook integration', () => {
+  let projectDir;
+
+  beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'prism-lifecycle-hook-'));
+    mkdirSync(join(projectDir, '.prism', 'plans'), { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
+  });
+
+  it('auto-completes plan when last task is checked', async () => {
+    const planFile = '2026-03-06-test.md';
+    const planPath = join(projectDir, '.prism', 'plans', planFile);
+    writeFileSync(planPath, '---\nstatus: active\ncreated: 2026-03-06\n---\n\n## Batch 1: Test\n- [x] Task one done\n- [ ] Task two implement feature\n');
+
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const result = planSync.evaluate(
+      { task_subject: 'implement feature for task two' },
+      { projectRoot: projectDir }
+    );
+
+    assert.ok(result);
+    const content = readFileSync(planPath, 'utf8');
+    assert.ok(content.includes('status: completed'), 'Plan should be auto-completed');
+    assert.ok(content.includes('completed_at:'), 'Should have completed_at date');
+  });
+
+  it('auto-activates draft plan on first task check', async () => {
+    const planFile = '2026-03-06-draft.md';
+    const planPath = join(projectDir, '.prism', 'plans', planFile);
+    writeFileSync(planPath, '---\nstatus: draft\ncreated: 2026-03-06\n---\n\n## Batch 1: Test\n- [ ] Task first implement something\n- [ ] Task second do other thing\n');
+
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    const result = planSync.evaluate(
+      { task_subject: 'implement something for first task' },
+      { projectRoot: projectDir }
+    );
+
+    assert.ok(result);
+    const content = readFileSync(planPath, 'utf8');
+    assert.ok(content.includes('status: active'), 'Draft plan should become active');
+  });
+
+  it('records progress milestone at 50%', async () => {
+    const planFile = '2026-03-06-progress.md';
+    const planPath = join(projectDir, '.prism', 'plans', planFile);
+    writeFileSync(planPath, '---\nstatus: active\ncreated: 2026-03-06\n---\n\n## Batch 1: Test\n- [x] Task one done\n- [ ] Task two implement feature\n- [ ] Task three do stuff\n- [ ] Task four finish up\n');
+
+    const { planSync } = await import('../hooks/task-plan-sync.mjs');
+    planSync.evaluate(
+      { task_subject: 'implement feature for task two' },
+      { projectRoot: projectDir }
+    );
+
+    const { readHistory } = await import('../lib/plan-lifecycle.mjs');
+    const events = readHistory(projectDir, planFile);
+    const progressEvents = events.filter(e => e.event === 'progress');
+    assert.ok(progressEvents.length > 0, 'Should record progress milestone');
+    assert.ok(progressEvents[0].detail.includes('50%'), 'Should be 50% milestone');
   });
 });

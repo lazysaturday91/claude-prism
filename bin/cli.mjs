@@ -12,6 +12,7 @@
  */
 
 import { init, check, uninstall, update, doctor, stats, reset, initGlobal, uninstallGlobal, installHud, uninstallHud, hudStatus } from '../lib/installer.mjs';
+import { discoverPlans, importPlans, STATUS_ICONS } from '../lib/plan-lifecycle.mjs';
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -100,6 +101,9 @@ switch (command) {
       const { scriptPath } = installHud();
       console.log(`✅ HUD enabled → ${scriptPath}`);
     }
+
+    // Plan discovery — find existing plan files in known paths
+    await promptPlanDiscovery(cwd);
 
     console.log('\n🌈 Done. Use /prism before complex tasks.');
     break;
@@ -243,6 +247,10 @@ switch (command) {
     }
     console.log('✅ Commands updated');
     console.log('✅ Commit guard updated');
+
+    // Plan discovery — find existing plan files in known paths
+    await promptPlanDiscovery(cwd);
+
     console.log('\n🌈 Prism updated to latest.');
     break;
   }
@@ -341,7 +349,7 @@ Options:
   }
 }
 } catch (err) {
-  const msg = err.message || String(err);
+  const msg = err?.message || String(err);
   process.stderr.write(`🌈 Prism Error: ${msg}\n`);
 
   if (/EACCES|permission/i.test(msg)) {
@@ -353,4 +361,44 @@ Options:
   }
 
   process.exit(1);
+}
+
+// ─── Plan Discovery Helper ───
+
+async function promptPlanDiscovery(projectDir) {
+  const found = discoverPlans(projectDir);
+  if (found.length === 0) return;
+
+  console.log(`\n📋 Plan discovery: ${found.length} plan file(s) found outside .prism/plans/\n`);
+  for (const p of found) {
+    const icon = STATUS_ICONS[p.status] || '📄';
+    const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+    const progress = p.total > 0 ? ` — ${p.done}/${p.total} (${pct}%)` : '';
+    const fm = p.hasFrontmatter ? '' : ' (no frontmatter)';
+    console.log(`  ${icon} ${p.source}${p.file}${progress}${fm}`);
+  }
+
+  if (!process.stdin.isTTY) {
+    console.log('\n  Run interactively to import, or use: prism import-plans');
+    return;
+  }
+
+  const { createInterface } = await import('readline');
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise(resolve =>
+    rl.question('\n  Import these plans into .prism/plans/? Originals will be preserved. (y/N): ', a => {
+      rl.close();
+      resolve(a.trim().toLowerCase());
+    })
+  );
+
+  if (answer === 'y' || answer === 'yes') {
+    const result = importPlans(projectDir, found);
+    console.log(`  ✅ ${result.imported} plan(s) imported, ${result.skipped} skipped`);
+    if (result.imported > 0) {
+      console.log('  Plans without frontmatter were assigned status based on task progress.');
+    }
+  } else {
+    console.log('  ⏭️  Plan import skipped');
+  }
 }

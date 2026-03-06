@@ -90,9 +90,16 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Streamlined verification**: 3-level fallback ladder (Tests → Build → Diff)
 - **Adaptive checkpoints**: no pause for small tasks, summary for medium, full for large
 
-**New in v1.6.0:**
+**New in v1.7.0:**
+- **Plan Lifecycle Management** — 6 states (`draft` → `active` → `completed` → `archived`, plus `blocked` and `abandoned`) with validated state machine transitions
+- **Auto-transitions** — plans auto-activate on first task check, auto-complete when all tasks done, with progress milestones (25/50/75%) logged
+- **Plan History** — `.prism/plans/.history.jsonl` records all status changes and milestones as timestamped events
+- **8 new `/plan` subcommands** — `complete`, `archive`, `block`, `unblock`, `abandon`, `reopen`, `history`, `status`
+- **Plan Discovery** — `prism init`/`update` scans `docs/` for existing plan files and offers to import them (originals preserved, frontmatter auto-derived from task progress)
+
+**v1.6.0:**
 - **Session Bootstrap** — agents auto-read `PROJECT-MEMORY.md`, `HANDOFF.md`, active plans, and registry on session start
-- **Plan Lifecycle** — frontmatter (`status`, `created`, `depends_on`), `/plan check` for cross-plan file conflict detection
+- **Plan Frontmatter** — frontmatter (`status`, `created`, `depends_on`), `/plan check` for cross-plan file conflict detection
 - **Docs Scaffolding** — `prism init --docs` creates `docs/` with templates + `.prism/registry.json`
 - **Lightweight Recording** — even small tasks append a 1-line summary to `docs/PROJECT-MEMORY.md`
 
@@ -134,7 +141,7 @@ The original three hooks (commit-guard, test-tracker, plan-enforcement) are dete
 |---------|---------|
 | `/claude-prism:prism` | Run full EUDEC cycle |
 | `/claude-prism:checkpoint` | Check batch progress with plan-reality sync |
-| `/claude-prism:plan` | List/create/view plan files |
+| `/claude-prism:plan` | Plan lifecycle (list/create/complete/archive/block/unblock/abandon/reopen/history/status) |
 | `/claude-prism:analytics` | Show usage analytics (blocks, warns, tests) |
 | `/claude-prism:doctor` | Diagnose installation health |
 | `/claude-prism:stats` | Version, hooks, plan count |
@@ -215,7 +222,7 @@ your-project/
 │   ├── hooks/                   # 6 runners (pre-tool, post-tool, precompact,
 │   │                            #   session-end, subagent-start, task-completed)
 │   ├── rules/                   # 7 rule modules
-│   ├── lib/                     # 8 shared dependencies
+│   ├── lib/                     # 9 shared dependencies
 │   └── settings.json            # Hook registration (6 events)
 
 ~/.claude/                       # (global install / HUD)
@@ -312,6 +319,16 @@ prism hud disable                                  # Deactivate HUD statusline
 Prism auto-detects [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
 
 ## Upgrading
+
+### To v1.7.0
+
+```bash
+npx claude-prism update
+```
+
+v1.7.0 adds plan lifecycle management with 6 states and auto-transitions. During `update`, Prism will scan `docs/` and `docs/plans/` for existing plan files and offer to import them into `.prism/plans/` (originals are preserved). Plans without frontmatter get auto-assigned status based on task progress.
+
+New lib file (`plan-lifecycle.mjs`) is installed automatically. No manual steps needed.
 
 ### To v1.4.0
 

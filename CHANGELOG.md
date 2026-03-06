@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] — 2026-03-06
+
+### Added
+- **Plan Lifecycle Management** — 6 states (`draft`, `active`, `blocked`, `completed`, `archived`, `abandoned`) with validated state machine transitions
+- **Plan History Log** — `.prism/plans/.history.jsonl` records all status changes and progress milestones as timestamped JSONL events
+- **8 new `/plan` subcommands** — `complete`, `archive`, `block`, `unblock`, `abandon`, `reopen`, `history`, `status`
+- **Auto-complete** — plan auto-transitions to `completed` when all tasks are checked (via task-plan-sync hook)
+- **Draft-to-active** — plan auto-transitions from `draft` to `active` on first task check
+- **Progress milestones** — 25%, 50%, 75% progress events recorded to history log
+- `lib/plan-lifecycle.mjs` — core lifecycle functions (`validateTransition`, `updatePlanStatus`, `appendHistory`, `readHistory`, `resolvePlan`)
+- `STATUS_ICONS` export — emoji mapping for all 6 plan statuses
+- 3 new message templates (`plan-lifecycle.completed`, `plan-lifecycle.status-changed`, `plan-lifecycle.auto-activated`)
+- **Plan Discovery** — `prism init`/`prism update` automatically scans `docs/`, `docs/plans/` for existing plan files and offers to import them into `.prism/plans/` (copy, originals preserved). Plans without frontmatter get auto-assigned status based on task progress (draft/active/completed).
+
+### Changed
+- `hooks/task-plan-sync.mjs` — integrates lifecycle auto-transitions (draft→active, active→completed, progress milestones)
+- `lib/installer.mjs` — installs 9 lib files (was 8, added `plan-lifecycle.mjs`)
+- Backward compatible: plans without frontmatter default to `active` status
+
 ## [1.6.1] — 2026-03-06
 
 ### Fixed

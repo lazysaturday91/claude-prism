@@ -7,6 +7,8 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { dispatchWebhook } from '../lib/webhook.mjs';
 import { getMessage } from '../lib/messages.mjs';
+import { updatePlanStatus, appendHistory } from '../lib/plan-lifecycle.mjs';
+import { parseFrontmatter } from '../lib/handoff.mjs';
 
 export const planSync = {
   name: 'task-plan-sync',
@@ -101,6 +103,56 @@ export const planSync = {
     }
 
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    // ── Plan lifecycle auto-transitions ──
+    try {
+      const planContent = readFileSync(planPath, 'utf8');
+      const fm = parseFrontmatter(planContent);
+      const currentStatus = fm.status || 'active';
+      const planFile = planFiles[0];
+
+      // draft → active: first task checked
+      if (done === 1 && (currentStatus === 'draft' || !fm.status)) {
+        const result = updatePlanStatus(planPath, 'active');
+        if (result.success) {
+          appendHistory(projectRoot, {
+            plan: planFile, event: 'status_change',
+            from: result.oldStatus, to: 'active',
+            actor: 'hook:task-plan-sync',
+            detail: 'First task checked'
+          });
+        }
+      }
+
+      // active → completed: all tasks done
+      if (done === total && total > 0 && currentStatus !== 'completed') {
+        const today = new Date().toISOString().slice(0, 10);
+        const result = updatePlanStatus(planPath, 'completed', { completed_at: today });
+        if (result.success) {
+          appendHistory(projectRoot, {
+            plan: planFile, event: 'status_change',
+            from: currentStatus, to: 'completed',
+            actor: 'hook:task-plan-sync',
+            detail: `All ${total} tasks completed`
+          });
+        }
+      }
+
+      // Progress milestones (25%, 50%, 75%)
+      if (total > 0) {
+        const prevPct = Math.round(((done - 1) / total) * 100);
+        for (const m of [25, 50, 75]) {
+          if (pct >= m && prevPct < m) {
+            appendHistory(projectRoot, {
+              plan: planFile, event: 'progress',
+              actor: 'hook:task-plan-sync',
+              detail: `Progress: ${done}/${total} (${pct}%)`
+            });
+          }
+        }
+      }
+    } catch { /* lifecycle errors should not break the hook */ }
+
     return {
       hookSpecificOutput: {
         hookEventName: 'TaskCompleted',
