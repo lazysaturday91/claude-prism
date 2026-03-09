@@ -29,13 +29,41 @@ The approach: **Essence → Simplify → Expand**. Strip down to the core of the
 
 Starting point for all work. Strip down to the core of the problem before implementation.
 
-### 1-1. Essence Extraction (3 Steps)
+Essence = "the thing without which it ceases to be what it is."
 
-| Step | Question | Output |
-|------|----------|--------|
-| **Extract** | "What do they actually want?" | Essence statement (1 sentence) |
-| **Simplify** | "What's the smallest working version?" | Minimal case |
-| **Expansion path** | "How do we grow from here?" | Expansion steps (2-4 steps) |
+### 1-1. Entry Judgment
+
+Before extracting essence, determine the approach:
+
+> "Can existing elements be removed from this problem?" (Are there references, prior art, existing solutions?)
+
+| Answer | Meaning | Path |
+|--------|---------|------|
+| **YES** | References, existing products, prior art exist | → Top-down (removal method) |
+| **NO** | No precedent, blank slate, novel domain | → Bottom-up (competitive exploration) |
+| **PARTIAL** | Some parts have references, some don't | → Hybrid (split, apply each path independently, merge in output) |
+
+Most coding tasks are **YES** (top-down). Bottom-up is for genuinely novel problems (new product direction, undefined feature space).
+
+### 1-2. Essence Extraction — Top-Down (Removal Method)
+
+The default path. Remove non-essential elements to reveal what remains.
+
+```
+Step 1. List all components of the problem/system
+Step 2. Remove one at a time, asking:
+        "Without this, is it still the thing?"
+          → YES (still the thing) → not essential, remove
+          → NO  (no longer the thing) → essence candidate
+Step 3. Validate remaining candidates:
+        "Do these alone justify the thing's existence?"
+          → YES → essence confirmed
+          → NO  → restore one removed item, re-test
+Step 4. Counterexample test:
+        "Can I name one scenario where this essence is wrong?"
+          → NO  → proceed
+          → YES → weaken confidence, document the counterexample, and verify the essence still holds from a different angle (e.g., different user persona, edge case, or opposing assumption)
+```
 
 **Output format:**
 ```
@@ -45,7 +73,28 @@ Starting point for all work. Strip down to the core of the problem before implem
 - Expansion path: minimal → [step1] → [step2] → [complete]
 ```
 
-### 1-2. Task Type Derivation
+### 1-3. Essence Extraction — Bottom-Up (Competitive Exploration)
+
+For novel problems with no prior art. Generate multiple essence candidates, compete them, select the survivor.
+
+```
+Step 1. Collect broadly (don't judge yet — quantity > quality)
+        Stop when: information saturates OR 3+ independent perspectives gathered OR time box hit
+Step 2. Filter (two-pass):
+        1st pass: gut feel — strong / moderate / weak (drop weak)
+        2nd pass: score remaining on frequency (1-3), impact (1-3), connectivity (1-3)
+        → 7-9 points: essence candidate
+        → 4-6 points: support element (reuse in DECOMPOSE)
+Step 3. Cluster similar candidates → select top 2-3
+        If only 1 candidate remains → create its opposite, compete them
+Step 4. Parallel exploration: "If this were the essence, what would we build?"
+        → Score difference ≤2 or irreversible decision → explore all equally
+        → Score difference >2 and reversible → staged elimination
+Step 5. Converge: which candidate solves the user's problem more directly?
+        Feasibility is NOT a factor here (that's DECOMPOSE's job)
+```
+
+### 1-4. Task Type Derivation
 
 The task type naturally emerges from the essence:
 
@@ -59,7 +108,7 @@ The task type naturally emerges from the essence:
 
 **Migration shortcut**: When applying the same transformation to 10+ files, don't decompose into individual file tasks. Define the pattern once, apply in batches of 5-10, verify after each batch. Scope guard thresholds are raised automatically when a plan file exists.
 
-### 1-3. Essence Validation (Error Prevention)
+### 1-5. Essence Validation (Error Prevention)
 
 | Trap | Response |
 |------|----------|
@@ -70,15 +119,7 @@ The task type naturally emerges from the essence:
 
 **Core test**: If the essence statement contains specific technology/tool names → it's still at solution level, not essence. Go one level higher.
 
-### 1-4. Quality Gate: ESSENCE → UNDERSTAND
-
-Before moving to UNDERSTAND, verify:
-- [ ] Essence statement is technology-neutral (holds without naming specific tools/libraries)
-- [ ] Minimal case is truly "minimal" (can it be reduced further?)
-- [ ] Each step in the expansion path works independently
-- [ ] Task type has been clearly derived
-
-### 1-5. Adaptive Weight (Task Size Routing)
+### 1-6. Adaptive Weight (Task Size Routing)
 
 After extracting essence and task type, assess task weight to select the appropriate EUDEC path:
 
@@ -97,6 +138,15 @@ After extracting essence and task type, assess task weight to select the appropr
 4. Verify (test/build/diff)
 
 Bugfixes skip ESSENCE extraction, UNDERSTAND ceremony, and DECOMPOSE entirely. The 4-step debugging protocol (4-3) is the complete path.
+
+### 1-7. Quality Gate: ESSENCE → UNDERSTAND
+
+Before moving to UNDERSTAND, verify:
+- [ ] Essence statement is technology-neutral (holds without naming specific tools/libraries)
+- [ ] Minimal case is truly "minimal" (can it be reduced further?)
+- [ ] Each step in the expansion path works independently
+- [ ] Task type has been clearly derived
+- [ ] Counterexample test passed (no unresolved counterexamples)
 
 ---
 
@@ -171,7 +221,23 @@ If no code change is needed (architecture review, cause analysis, investigation)
 | **Refactor** | 3+ files affected (same advisory as Feature) | Decompose into batches. Plan file if 6+ files or 3+ modules. |
 | **Investigation** | — | Skip decomposition. Define exploration scope. |
 
-### 3-2. Decomposition Principles (Feature/Refactor only)
+### 3-2. Scope Classification (before decomposing)
+
+Before breaking into batches, classify all changes using the concentric circle model:
+
+```
+"Is this required for the essence to work?"
+  → YES → Core (must be in scope)
+  → NO  → "Does this amplify the essence's value?"
+    → YES → Support (nice to have, lower priority)
+    → NO  → Out of Scope (explicitly excluded)
+```
+
+- Only **Core** items enter batch decomposition
+- **Support** items are noted for later (not in current plan)
+- **Out of Scope** must not be empty — if everything is "Core", scope classification has failed (return to ESSENCE)
+
+### 3-3. Decomposition Principles (Feature/Refactor only)
 
 1. **Independent verification**: each unit has a pass criterion
 2. **Files specified**: each task lists files to create/modify
@@ -188,7 +254,7 @@ If no code change is needed (architecture review, cause analysis, investigation)
 - **[S]-only: up to 8 per batch** (independent small changes can be batched aggressively)
 - Aligns with 4-1 adaptive batch size (simple/mechanical: 5-8 per batch)
 
-### 3-3. Plan File Persistence
+### 3-4. Plan File Persistence
 
 Save multi-step plans (6+ files) as markdown:
 - **Path**: `.prism/plans/YYYY-MM-DD-<topic>.md`
@@ -229,7 +295,7 @@ Tech stack, key decisions, 2-3 sentences max.
 - [Known unknowns or potential blockers]
 ```
 
-### 3-4. Pre-Decomposition Check
+### 3-5. Pre-Decomposition Check
 
 Before creating the plan:
 - [ ] **Codebase audit**: grep/search to verify targets actually exist in code (don't trust assumptions from prior sessions)
@@ -240,7 +306,7 @@ Before creating the plan:
 
 **Staleness prevention**: If plan targets (files to change, patterns to replace) no longer exist in the codebase, mark them as "already completed" before starting execution. Never start a plan without verifying its targets are real.
 
-### 3-5. Quality Gate: DECOMPOSE → EXECUTE
+### 3-6. Quality Gate: DECOMPOSE → EXECUTE
 
 Before starting execution, all must pass:
 - [ ] Plan file exists and targets verified against codebase
@@ -315,24 +381,24 @@ Choose verification proportional to the **risk of the change**, not the file pat
 
 ### 4-4. Self-Correction Triggers
 
-- Same file edited 3+ times → "Possible thrashing. Investigate root cause."
-- Editing file not in plan → "Scope change needed?"
-- 3 consecutive test failures → "Approach problem. Back to ESSENCE — did we get the essence wrong?"
+- Same file edited 3+ times → "Possible thrashing. Investigate root cause." → **Fallback: UNDERSTAND (re-examine the problem)**
+- Editing file not in plan → "Scope change needed?" → **Fallback: DECOMPOSE (re-classify scope)**
+- 3 consecutive test failures → "Approach problem." → **Fallback: ESSENCE (was the essence wrong?)**
 - New package needed → "Confirm with user"
 - 5 turns autonomous → "Report progress before continuing"
-- Adding workarounds to fix workarounds → "Design problem. Step back."
+- Adding workarounds to fix workarounds → "Design problem." → **Fallback: ESSENCE (re-extract)**
 - Copy-pasting similar code 3+ times → "Need abstraction? Ask user."
 - Dependency version mismatch detected → "Resolve before continuing."
 - Plan file checkboxes not updated after batch → "Update plan checkboxes and frontmatter before continuing"
+- Scope expanding beyond plan → "Scope creep." → **Fallback: DECOMPOSE (re-run scope classification)**
+- Error messages changing type across fixes → "Chasing symptoms, not root cause." → **Fallback: ESSENCE**
 
 **Goal Recitation** (prevents drift in long sessions):
 - At every batch boundary, re-read the plan file and confirm: "Current work aligns with: [original goal]"
 - If current work does not serve the original goal → STOP, report drift, return to plan
 
 **Thrashing Detector** (beyond simple edit counting):
-- Successive edits reverting previous changes (oscillation) → "Reverting own work. Wrong approach."
-- Scope of changes expanding beyond plan → "Scope creep. Return to DECOMPOSE."
-- Error messages changing type across fixes → "Chasing symptoms, not root cause. Back to ESSENCE."
+- Successive edits reverting previous changes (oscillation) → "Reverting own work. Wrong approach." → **Fallback: ESSENCE**
 
 ### 4-5. Scope Guard
 

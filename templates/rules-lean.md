@@ -30,6 +30,13 @@ For the full methodology, run `/claude-prism:prism`.
 | **Standard** | 3-5 files, 50-200 LOC | Run `/claude-prism:prism` for full EUDEC guidance |
 | **Full** | 6+ files, 200+ LOC, or unclear scope | Run `/claude-prism:prism` for full EUDEC with plan file |
 
+## Entry Judgment
+
+Before extracting essence: "Can existing elements be removed from this problem?"
+- **YES** (prior art exists) → Top-down: list components, remove one at a time, what remains is essence
+- **NO** (blank slate) → Bottom-up: collect broadly, score, compete 2-3 candidates, select survivor
+- **PARTIAL** → Split the problem, apply each path to its part
+
 ## Task Type Derivation
 
 | Essence Character | Type | Path |
@@ -69,11 +76,12 @@ After 3 failed fixes: STOP. Discuss with user.
 
 ## Self-Correction Triggers
 
-- Same file edited 3+ times → investigate root cause
-- Editing file not in plan → scope change needed?
-- 3 consecutive test failures → back to essence
+- Same file edited 3+ times → investigate root cause → **Fallback: UNDERSTAND**
+- Editing file not in plan → scope change needed? → **Fallback: DECOMPOSE**
+- 3 consecutive test failures → **Fallback: ESSENCE (was the essence wrong?)**
 - 5 turns autonomous → report progress before continuing
-- Adding workarounds to fix workarounds → design problem, step back
+- Adding workarounds to fix workarounds → **Fallback: ESSENCE (re-extract)**
+- Scope expanding beyond plan → **Fallback: DECOMPOSE (re-classify scope)**
 
 ## Rationalization Defense
 
