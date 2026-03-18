@@ -23,7 +23,7 @@ the infrastructure that channels AI coding agents toward correct, verified outpu
 It combines a behavioral methodology (EUDEC), deterministic hooks for enforcement,
 session lifecycle automation, and adaptive process weight that scales with task complexity.
 
-Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Seven hooks enforce the methodology and automate session management.
+Installs the EUDEC methodology — **Essence, Understand, Decompose, Execute, Checkpoint** — directly into your project's Claude Code environment. Includes a session transition protocol (Handoff) that bookends the core cycle. Eight hooks enforce the methodology and automate session management.
 
 ## The Problem
 
@@ -52,8 +52,8 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 
 ```
 ┌──────────────────── EUDEC Core Cycle ───────────────────┐
-│ ESSENCE ── Extract core problem → simplify → expand      │
-│   │        Task type derivation from essence             │
+│ ESSENCE ── Entry Judgment → extract core → simplify      │
+│   │        → expand · Scope Classification               │
 │ UNDERSTAND ── Sufficiency assessment → ask → align       │
 │   │          Environment validation                      │
 │   │          Analysis-only branch (skip D/E/C if no code │
@@ -90,7 +90,24 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Streamlined verification**: 3-level fallback ladder (Tests → Build → Diff)
 - **Adaptive checkpoints**: no pause for small tasks, summary for medium, full for large
 
-**New in v1.7.0:**
+**New in v1.9.0:**
+- **Modular protocol files** — EUDEC methodology split into 6 on-demand files. CLAUDE.md reduced from 586 lines (26KB) to 114 lines (4.5KB) — **82% reduction**
+- **Lean mode is now the default** — core principles always loaded, detailed protocols read only when entering the relevant EUDEC phase
+- Protocol files installed to `.claude/protocols/prism/`: `essence.md`, `understand.md`, `decompose.md`, `execute.md`, `checkpoint.md`, `handoff.md`
+- Existing users get lean mode automatically on `prism update`
+
+**v1.8.1:**
+- **ESSENCE phase expanded** — Entry Judgment (Top-down/Bottom-up/Hybrid approach selection), Top-Down Removal Method with Counterexample test, Bottom-Up Competitive Exploration for novel problems
+- **Scope Classification** — Core/Support/Out of Scope concentric circle model; "Out of Scope must not be empty" constraint prevents unbounded work
+- **Self-Correction Fallbacks** — each trigger now specifies an explicit fallback phase (→ ESSENCE/UNDERSTAND/DECOMPOSE) instead of generic "stop"
+
+**v1.8.0:**
+- **Plan progress auto-tracking** — `PostToolUse [Edit|Write]` hook tracks file-level progress against active plan's "Files in Scope"
+- **plan-progress-tracker** rule — matches edited files to scoped files, records milestones (25/50/75%), auto-transitions `draft → active` on first edit
+- **Auto-backfill frontmatter** — plans without frontmatter get status auto-derived from checkbox progress
+- **mergeSettings() fix** — `prism update` now correctly adds new matchers for existing hook commands
+
+**v1.7.0:**
 - **Plan Lifecycle Management** — 6 states (`draft` → `active` → `completed` → `archived`, plus `blocked` and `abandoned`) with validated state machine transitions
 - **Auto-transitions** — plans auto-activate on first task check, auto-complete when all tasks done, with progress milestones (25/50/75%) logged
 - **Plan History** — `.prism/plans/.history.jsonl` records all status changes and milestones as timestamped events
@@ -119,7 +136,7 @@ Injected into `CLAUDE.md`, EUDEC is a behavioral framework that corrects how AI 
 - **Verification scoping**: Build check output filtered to changed files only — pre-existing errors are ignored
 - **Agent failure recovery**: 3-step protocol when delegated agents produce incomplete results
 
-### 2. Seven Focused Hooks
+### 2. Eight Focused Hooks
 
 Hooks enforce the methodology at critical points:
 
@@ -132,8 +149,9 @@ Hooks enforce the methodology at critical points:
 | **session-end-handler** | SessionEnd | Saves HANDOFF + appends to `docs/PROJECT-MEMORY.md` |
 | **scope-injector** | SubagentStart | Injects current plan batch context into subagent |
 | **plan-sync** | TaskCompleted | Auto-updates plan file checkboxes on task completion |
+| **plan-progress** | PostToolUse | Tracks file-level progress against active plan's "Files in Scope" |
 
-The original three hooks (commit-guard, test-tracker, plan-enforcement) are deterministic enforcers. The four new hooks (v1.4.0) are **session lifecycle automations** — they don't block or warn, they auto-save context and sync plan state.
+The original three hooks (commit-guard, test-tracker, plan-enforcement) are deterministic enforcers. The four v1.4.0 hooks are **session lifecycle automations** — they auto-save context and sync plan state. The v1.8.0 **plan-progress** hook bridges the gap by tracking real-time file edits against the plan.
 
 ### 3. Slash Commands
 
@@ -219,9 +237,10 @@ your-project/
 │   └── plans/                   # Plan files (created during work)
 ├── .claude/
 │   ├── commands/claude-prism/   # 9 slash commands
+│   ├── protocols/prism/         # 6 EUDEC protocol files (read on demand)
 │   ├── hooks/                   # 6 runners (pre-tool, post-tool, precompact,
 │   │                            #   session-end, subagent-start, task-completed)
-│   ├── rules/                   # 7 rule modules
+│   ├── rules/                   # 8 rule modules
 │   ├── lib/                     # 9 shared dependencies
 │   └── settings.json            # Hook registration (6 events)
 
@@ -245,7 +264,8 @@ Edit `.prism/config.json`:
     "precompact-handler": { "enabled": true },
     "session-end-handler": { "enabled": true },
     "subagent-scope-injector": { "enabled": true },
-    "task-plan-sync": { "enabled": true, "matchThreshold": 0.3 }
+    "task-plan-sync": { "enabled": true, "matchThreshold": 0.3 },
+    "plan-progress-tracker": { "enabled": true }
   },
   "webhooks": [
     {
@@ -260,25 +280,36 @@ Edit `.prism/config.json`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `version` | 1 | Config schema version (for future migrations) |
-| `rulesMode` | `"full"` | `"full"` injects the complete ~500-line EUDEC methodology; `"lean"` injects ~80-line behavioral modifiers and routes to `/claude-prism:prism` for full guidance |
+| `rulesMode` | `"lean"` | `"lean"` (default) injects ~114-line core principles with on-demand protocol files in `.claude/protocols/prism/`; `"full"` injects the complete ~586-line EUDEC methodology directly into CLAUDE.md |
 | `commit-guard.maxTestAge` | 300 | Seconds before test run is considered stale |
 | `plan-enforcement.warnAt` | 6 | Unique source file count that triggers plan warning |
 | `task-plan-sync.matchThreshold` | 0.3 | Keyword overlap ratio for fuzzy task matching |
 | `webhooks` | `[]` | HTTP endpoints for event notifications |
 
-### Lean Router (beta)
+### Modular Protocols (v1.9.0)
 
-By default, Prism injects the full EUDEC methodology (~500 lines) into `CLAUDE.md`. This provides passive absorption — the agent always has the complete framework in context.
+By default, Prism injects lean rules (~114 lines) into `CLAUDE.md` — core principles, task routing, scope guard, and verification ladder. Detailed EUDEC protocols are installed as separate files in `.claude/protocols/prism/` and read on demand when entering each phase.
 
-**Lean mode** injects only ~80 lines of behavioral modifiers (Scope Guard, Verification Ladder, Bugfix Fast Path, etc.) and routes Standard/Full tasks to the `/claude-prism:prism` slash command for on-demand full guidance. This saves context window for code.
+This reduces context overhead by **82%** while keeping the full methodology available:
+
+| Protocol File | Read When |
+|---|---|
+| `essence.md` | New feature, refactor, or unclear task |
+| `understand.md` | Clarifying requirements or assumptions |
+| `decompose.md` | 3+ files affected, need batch plan |
+| `execute.md` | During implementation |
+| `checkpoint.md` | Reporting batch/phase completion |
+| `handoff.md` | Session ending or task transition |
+
+**Full mode** is still available for users who prefer the entire methodology in CLAUDE.md:
 
 ```bash
-# Switch to lean mode
-echo '{"version":1,"rulesMode":"lean"}' > .prism/config.json
+# Switch to full mode (everything in CLAUDE.md)
+echo '{"version":1,"rulesMode":"full"}' > .prism/config.json
 prism update
 
-# Switch back to full mode
-echo '{"version":1,"rulesMode":"full"}' > .prism/config.json
+# Switch back to lean mode (default)
+echo '{"version":1,"rulesMode":"lean"}' > .prism/config.json
 prism update
 ```
 
@@ -319,6 +350,29 @@ prism hud disable                                  # Deactivate HUD statusline
 Prism auto-detects [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode). When present, `prism stats` and `prism doctor` show OMC version. No configuration needed.
 
 ## Upgrading
+
+### To v1.9.0
+
+```bash
+npx claude-prism@latest update
+```
+
+v1.9.0 changes the default `rulesMode` from `full` to `lean`. On update:
+- CLAUDE.md is automatically slimmed from ~586 lines to ~114 lines
+- 6 protocol files are copied to `.claude/protocols/prism/`
+- Users who explicitly set `rulesMode: "full"` keep full mode
+
+To opt back into full mode after updating, set `"rulesMode": "full"` in `.prism/config.json` and run `prism update`.
+
+### To v1.8.x
+
+```bash
+npx claude-prism update
+```
+
+v1.8.0 adds real-time plan progress tracking via `PostToolUse [Edit|Write]` hooks. v1.8.1 expands the ESSENCE phase with Entry Judgment, Scope Classification, and explicit fallback phases.
+
+`prism update` installs new rules and matchers automatically. Existing hooks and configuration are preserved.
 
 ### To v1.7.0
 
