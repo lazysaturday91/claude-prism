@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] — 2026-03-18
+
+### Added
+- **Modular protocol files** — EUDEC methodology split into 6 on-demand protocol files (`essence.md`, `understand.md`, `decompose.md`, `execute.md`, `checkpoint.md`, `handoff.md`)
+- `copyProtocols()` in installer — copies protocol files to `.claude/protocols/prism/` during `init` and `update`
+- Protocol file verification tests
+
+### Changed
+- **Default `rulesMode` changed from `full` to `lean`** — CLAUDE.md injection reduced from 586 lines (26KB) to 114 lines (4.5KB), an 82% reduction
+- `rules-lean.md` now references `.claude/protocols/prism/*.md` for on-demand reading instead of `/claude-prism:prism` slash command
+- `preservedRulesMode` logic updated to preserve `full` mode for users who explicitly opted in
+- Existing users get lean mode automatically on `prism update` (marker-based replacement)
+
 ## [1.8.1] — 2026-03-09
 
 ### Changed
