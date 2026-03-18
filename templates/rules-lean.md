@@ -12,13 +12,24 @@ On session start, read in order:
 After reading, verify described state matches reality (git status, file contents).
 <!-- PRISM:BOOT:END -->
 
-# Prism — EUDEC Methodology (Lean Mode)
+# Prism — EUDEC Methodology Framework
 
 **EUDEC = Essence, Understand, Decompose, Execute, Checkpoint** — the core cycle.
 
 > **Never implement what you haven't understood. Never understand what you haven't distilled to its essence.**
 
-For the full methodology, run `/claude-prism:prism`.
+## Protocol Reference (Read on demand)
+
+When entering an EUDEC phase, read the corresponding protocol file:
+
+| Phase | When to Read | File |
+|-------|-------------|------|
+| **Essence** | New feature, refactor, or unclear task | `.claude/protocols/prism/essence.md` |
+| **Understand** | Need to clarify requirements or assumptions | `.claude/protocols/prism/understand.md` |
+| **Decompose** | 3+ files affected, need batch plan | `.claude/protocols/prism/decompose.md` |
+| **Execute** | During implementation (batch execution, verification) | `.claude/protocols/prism/execute.md` |
+| **Checkpoint** | Reporting batch/phase completion | `.claude/protocols/prism/checkpoint.md` |
+| **Handoff** | Session ending, context limit, or task transition | `.claude/protocols/prism/handoff.md` |
 
 ---
 
@@ -27,8 +38,8 @@ For the full methodology, run `/claude-prism:prism`.
 | Weight | Criteria | Path |
 |--------|----------|------|
 | **Lightweight** | 1-2 files, <50 LOC, clear scope | Essence (1 line) → Execute → Verify → Record (1-line to `docs/PROJECT-MEMORY.md`) → Done |
-| **Standard** | 3-5 files, 50-200 LOC | Run `/claude-prism:prism` for full EUDEC guidance |
-| **Full** | 6+ files, 200+ LOC, or unclear scope | Run `/claude-prism:prism` for full EUDEC with plan file |
+| **Standard** | 3-5 files, 50-200 LOC | Full EUDEC (read protocols as needed) |
+| **Full** | 6+ files, 200+ LOC, or unclear scope | Full EUDEC with plan file + full checkpoints |
 
 ## Entry Judgment
 
@@ -42,9 +53,9 @@ Before extracting essence: "Can existing elements be removed from this problem?"
 | Essence Character | Type | Path |
 |-------------------|------|------|
 | "X is broken" | Bugfix | Fast Path (below) |
-| "X should be possible" | Feature | `/claude-prism:prism` |
+| "X should be possible" | Feature | Read `essence.md` → full EUDEC |
 | "All X must become Y" | Migration | Pattern → batch apply → verify |
-| "X's structure must change" | Refactor | `/claude-prism:prism` |
+| "X's structure must change" | Refactor | Read `essence.md` → full EUDEC |
 
 ## Bugfix Fast Path
 
@@ -95,14 +106,14 @@ After 3 failed fixes: STOP. Discuss with user.
 ## Checkpoint Frequency
 
 - **Lightweight**: report completion with evidence, no pause
-- **Standard/Full**: run `/claude-prism:prism` for guided checkpoints
+- **Standard/Full**: read `.claude/protocols/prism/checkpoint.md` for guided checkpoints
 - **Blocker encountered**: always stop
 
 ## Session Handoff
 
 Prism hooks auto-generate `docs/HANDOFF.md` on compaction and session end.
 `docs/PROJECT-MEMORY.md` is auto-appended on session end.
-For manual handoff: Status, Current State, Next Steps, Decisions Made, Known Issues.
+For manual handoff: read `.claude/protocols/prism/handoff.md`.
 
 ## Completion Declaration
 

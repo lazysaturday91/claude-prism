@@ -65,28 +65,32 @@ describe('cli init', () => {
 
   // ─── rules strengthening tests ───
 
-  it('english rules contain Assumption Detection section', async () => {
+  it('lean rules contain Protocol Reference table and Scope Guard', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: false });
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('Assumption Detection'));
-    assert.ok(content.includes('Red Flag'));
-  });
-
-  it('english rules contain Scope Guard section', async () => {
-    const { init } = await import('../lib/installer.mjs');
-    await init(projectDir, { hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
+    assert.ok(content.includes('Protocol Reference'));
     assert.ok(content.includes('Scope Guard'));
     assert.ok(content.includes('Only change what was requested'));
   });
 
-  it('english rules contain plan file template format', async () => {
+  it('copies protocol files with detailed EUDEC content', async () => {
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: false });
-    const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('## Goal'));
-    assert.ok(content.includes('## Batch'));
+    const protocolsDir = join(projectDir, '.claude', 'protocols', 'prism');
+    // Protocol files exist
+    assert.ok(existsSync(join(protocolsDir, 'essence.md')));
+    assert.ok(existsSync(join(protocolsDir, 'understand.md')));
+    assert.ok(existsSync(join(protocolsDir, 'decompose.md')));
+    assert.ok(existsSync(join(protocolsDir, 'execute.md')));
+    assert.ok(existsSync(join(protocolsDir, 'checkpoint.md')));
+    assert.ok(existsSync(join(protocolsDir, 'handoff.md')));
+    // Detailed content moved to protocol files
+    const understand = readFileSync(join(protocolsDir, 'understand.md'), 'utf8');
+    assert.ok(understand.includes('Assumption Detection'));
+    const decompose = readFileSync(join(protocolsDir, 'decompose.md'), 'utf8');
+    assert.ok(decompose.includes('## Goal'));
+    assert.ok(decompose.includes('## Batch'));
   });
 
   it('preserves existing CLAUDE.md content', async () => {
@@ -105,7 +109,7 @@ describe('cli init', () => {
     // Should not have double injection
     const starts = content.split('<!-- PRISM:START -->').length - 1;
     assert.equal(starts, 1);
-    assert.ok(content.includes('Understanding Protocol'));
+    assert.ok(content.includes('Protocol Reference'));
   });
 
   it('creates CLAUDE.md if it does not exist', async () => {
@@ -313,11 +317,11 @@ describe('cli update', () => {
     rmSync(projectDir, { recursive: true, force: true });
   });
 
-  it('re-installs rules from rules.md', async () => {
+  it('re-installs rules from rules-lean.md', async () => {
     const { update } = await import('../lib/installer.mjs');
     await update(projectDir);
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('Understanding Protocol'));
+    assert.ok(content.includes('Protocol Reference'));
   });
 
   it('updates rules while preserving existing CLAUDE.md content', async () => {
@@ -719,7 +723,8 @@ describe('cli self-update detection', () => {
     writeFileSync(join(projectDir, 'package.json'), JSON.stringify({ name: 'claude-prism' }));
     writeFileSync(join(projectDir, 'CLAUDE.md'), '# Test\n<!-- PRISM:START -->old<!-- PRISM:END -->\n');
     mkdirSync(join(projectDir, 'templates'), { recursive: true });
-    writeFileSync(join(projectDir, 'templates', 'rules.md'), '<!-- PRISM:START -->\n# Local Rules\n<!-- PRISM:END -->');
+    writeFileSync(join(projectDir, 'templates', 'rules.md'), '<!-- PRISM:START -->\n# Full Rules\n<!-- PRISM:END -->');
+    writeFileSync(join(projectDir, 'templates', 'rules-lean.md'), '<!-- PRISM:START -->\n# Local Rules\n<!-- PRISM:END -->');
     const result = await update(projectDir);
     assert.ok(result?.sourceRepo);
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
@@ -1036,7 +1041,7 @@ describe('lean mode', () => {
     await init(projectDir, { hooks: false });
 
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(content.includes('Lean Mode'), 'CLAUDE.md should contain Lean Mode');
+    assert.ok(content.includes('Protocol Reference'), 'CLAUDE.md should contain Protocol Reference table');
     assert.ok(content.includes('<!-- PRISM:START -->'), 'Should have PRISM markers');
   });
 
@@ -1059,23 +1064,23 @@ describe('lean mode', () => {
     assert.ok(leanContent.includes('Scope Guard'), 'Lean rules should contain Scope Guard');
   });
 
-  it('lean rules direct to /prism slash command', async () => {
+  it('lean rules reference protocol files for on-demand reading', async () => {
     const { readFileSync: rfs } = await import('fs');
     const { join: pjoin, dirname: pdir } = await import('path');
     const { fileURLToPath: furl } = await import('url');
     const dir = pdir(furl(import.meta.url));
     const leanContent = rfs(pjoin(dir, '..', 'templates', 'rules-lean.md'), 'utf8');
-    assert.ok(leanContent.includes('claude-prism:prism'), 'Lean rules should reference /claude-prism:prism');
+    assert.ok(leanContent.includes('.claude/protocols/prism/'), 'Lean rules should reference protocol files');
   });
 
-  it('defaults to full when rulesMode not set', async () => {
-    // No .prism/config.json — defaults apply
+  it('defaults to lean when rulesMode not set', async () => {
+    // No .prism/config.json — defaults apply (lean is the new default)
     const { init } = await import('../lib/installer.mjs');
     await init(projectDir, { hooks: false });
 
     const content = readFileSync(join(projectDir, 'CLAUDE.md'), 'utf8');
-    assert.ok(!content.includes('Lean Mode'), 'Should NOT contain Lean Mode when config absent');
-    assert.ok(content.includes('EUDEC Methodology Framework'), 'Should contain full methodology');
+    assert.ok(content.includes('Protocol Reference'), 'Should contain Protocol Reference (lean mode)');
+    assert.ok(content.includes('EUDEC Methodology Framework'), 'Should contain methodology title');
   });
 });
 
